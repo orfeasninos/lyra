@@ -66,17 +66,21 @@ class Library(
         albums = albumMap.map { (key, list) ->
             val sorted = list.sortedWith(compareBy<Song> { it.track }.then(byName { it.fileName }))
             val first = sorted.first()
-            val artistName = first.albumArtistRaw?.let { resolveName(it) }
-                ?: perSong[first.id]?.firstOrNull()?.key?.let { k ->
-                    if (sorted.all { perSong[it.id]?.firstOrNull()?.key == k }) displayFor(k) else "Various Artists"
-                } ?: first.artistRaw
+            val albumArtist = first.albumArtistRaw?.let { resolveName(it) }
+            val artist = perSong[first.id]?.firstOrNull()?.key?.let { k ->
+                if (sorted.all { perSong[it.id]?.firstOrNull()?.key == k }) displayFor(k) else "Various Artists"
+            } ?: first.artistRaw
+            val composers = sorted.mapNotNull { it.composer?.trim() }.distinctBy { norm(it) }
             Album(
                 key = key,
                 title = first.album,
-                artistName = artistName,
+                artistName = albumArtist ?: artist,
                 year = sorted.maxOf { it.year },
                 folder = first.folder,
                 songs = sorted,
+                artist = artist,
+                albumArtist = albumArtist,
+                composer = composers.takeIf { it.isNotEmpty() }?.joinToString(", "),
             )
         }.sortedWith(byName { it.title })
 

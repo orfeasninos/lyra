@@ -26,6 +26,7 @@ import app.lyra.player.data.Song
 import app.lyra.player.ui.components.AddToPlaylistDialog
 import app.lyra.player.ui.components.SongActions
 import app.lyra.player.ui.screens.AlbumScreen
+import app.lyra.player.ui.screens.AlbumSettingsScreen
 import app.lyra.player.ui.screens.ArtistScreen
 import app.lyra.player.ui.screens.FolderScreen
 import app.lyra.player.ui.screens.HomeScreen
@@ -40,6 +41,7 @@ object Routes {
     const val PLAYER = "player"
     const val SEARCH = "search"
     const val SETTINGS = "settings"
+    const val ALBUM_SETTINGS = "settings/albums"
     fun album(key: String) = "album/${Uri.encode(key)}"
     fun artist(key: String, name: String) = "artist/${Uri.encode(key)}?name=${Uri.encode(name)}"
     fun folder(path: String) = "folder/${Uri.encode(path)}"
@@ -102,6 +104,7 @@ fun LyraRoot(vm: LibraryViewModel) {
                 composable(Routes.PLAYER) { PlayerScreen(ctx) }
                 composable(Routes.SEARCH) { SearchScreen(ctx) }
                 composable(Routes.SETTINGS) { SettingsScreen(ctx) }
+                composable(Routes.ALBUM_SETTINGS) { AlbumSettingsScreen(ctx) }
                 composable("album/{key}", listOf(navArgument("key") { type = NavType.StringType })) {
                     AlbumScreen(ctx, it.arguments?.getString("key").orEmpty())
                 }

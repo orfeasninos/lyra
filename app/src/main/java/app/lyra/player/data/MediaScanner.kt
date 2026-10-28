@@ -23,6 +23,8 @@ object MediaScanner {
             MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.DATE_MODIFIED,
+            MediaStore.Audio.Media.COMPOSER,
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val songs = ArrayList<Song>()
@@ -49,6 +51,8 @@ object MediaScanner {
             val dataCol = c.getColumnIndex(MediaStore.Audio.Media.DATA)
             val nameCol = c.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME)
             val dateCol = c.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+            val modifiedCol = c.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
+            val composerCol = c.getColumnIndex(MediaStore.Audio.Media.COMPOSER)
 
             while (c.moveToNext()) {
                 val id = c.getLong(idCol)
@@ -74,6 +78,8 @@ object MediaScanner {
                     folder = path.substringBeforeLast('/', missingDelimiterValue = ""),
                     fileName = fileName,
                     dateAdded = if (dateCol >= 0) c.getLong(dateCol) else 0L,
+                    dateModified = if (modifiedCol >= 0) c.getLong(modifiedCol) else 0L,
+                    composer = if (composerCol >= 0) c.getString(composerCol)?.takeUnless { it.isBlank() } else null,
                 )
             }
         }

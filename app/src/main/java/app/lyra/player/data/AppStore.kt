@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -239,6 +240,36 @@ class AppStore(context: Context) {
         }
         write("queues.json", arr.toString())
     }
+
+    // ---------- Ρυθμίσεις καρτέλας άλμπουμ ----------
+
+    private val _albumPrefs = MutableStateFlow(loadAlbumPrefs())
+    val albumPrefs: StateFlow<AlbumPrefs> = _albumPrefs.asStateFlow()
+
+    fun updateAlbumPrefs(change: (AlbumPrefs) -> AlbumPrefs) {
+        val p = _albumPrefs.updateAndGet(change)
+        write("album_prefs.json", JSONObject().apply {
+            put("sort", p.sort.name); put("desc", p.descending)
+            put("view", p.viewMode.name); put("grid", p.gridSize.name)
+            put("extra", p.extraInfo.name); put("quickSearch", p.quickSearch)
+        }.toString())
+    }
+
+    private fun loadAlbumPrefs(): AlbumPrefs {
+        val o = readText("album_prefs.json")?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return AlbumPrefs()
+        val d = AlbumPrefs()
+        return AlbumPrefs(
+            sort = enumOr(o.optString("sort"), d.sort),
+            descending = o.optBoolean("desc", d.descending),
+            viewMode = enumOr(o.optString("view"), d.viewMode),
+            gridSize = enumOr(o.optString("grid"), d.gridSize),
+            extraInfo = enumOr(o.optString("extra"), d.extraInfo),
+            quickSearch = o.optBoolean("quickSearch", d.quickSearch),
+        )
+    }
+
+    private inline fun <reified E : Enum<E>> enumOr(name: String, default: E): E =
+        enumValues<E>().firstOrNull { it.name == name } ?: default
 
     // ---------- Βοηθητικά ----------
 

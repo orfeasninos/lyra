@@ -20,6 +20,9 @@ data class Song(
     val folder: String,
     val fileName: String,
     val dateAdded: Long,
+    /** Πότε άλλαξε τελευταία φορά το αρχείο (δευτερόλεπτα). */
+    val dateModified: Long,
+    val composer: String?,
 )
 
 /** Ένας "πραγματικός" καλλιτέχνης, αφού εφαρμοστούν τα ψευδώνυμα. */
@@ -35,12 +38,19 @@ data class Artist(
 data class Album(
     val key: String,
     val title: String,
+    /** Ο album artist αν υπάρχει, αλλιώς ο καλλιτέχνης των τραγουδιών. */
     val artistName: String,
     val year: Int,
     val folder: String,
     val songs: List<Song>,
+    /** Ο καλλιτέχνης των τραγουδιών ("Various Artists" αν διαφέρουν). */
+    val artist: String,
+    val albumArtist: String?,
+    val composer: String?,
 ) {
     val cover: Song get() = songs.first()
+    val durationMs: Long = songs.sumOf { it.durationMs }
+    val dateUpdated: Long = songs.maxOf { it.dateModified }
 }
 
 data class Folder(
