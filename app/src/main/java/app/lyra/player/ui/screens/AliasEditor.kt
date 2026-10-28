@@ -34,6 +34,7 @@ import app.lyra.player.data.AppStore.Companion.norm
 import app.lyra.player.data.Artist
 import app.lyra.player.data.Library
 import app.lyra.player.ui.AppContext
+import app.lyra.player.ui.components.songCount
 import java.text.Normalizer
 
 /**
@@ -80,11 +81,11 @@ fun AliasEditor(ctx: AppContext, artist: Artist, lib: Library, onDismiss: () -> 
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ονόματα καλλιτέχνη") },
+        title = { Text("Artist names") },
         text = {
             LazyColumn(Modifier.heightIn(max = 520.dp)) {
                 item {
-                    Text("Όνομα που εμφανίζεται", style = MaterialTheme.typography.labelLarge)
+                    Text("Display name", style = MaterialTheme.typography.labelLarge)
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(display, { display = it }, Modifier.weight(1f), singleLine = true)
                         TextButton(
@@ -96,13 +97,13 @@ fun AliasEditor(ctx: AppContext, artist: Artist, lib: Library, onDismiss: () -> 
 
                 item {
                     Text(
-                        "Γνωστός/ή και ως",
+                        "Also known as",
                         Modifier.padding(top = 16.dp, bottom = 4.dp),
                         style = MaterialTheme.typography.labelLarge,
                     )
                     if (artist.aliases.isEmpty()) {
                         Text(
-                            "Κανένα ακόμα. Πρόσθεσε ονόματα παρακάτω, π.χ. παλιό όνομα, ψευδώνυμο ή άλλη γραφή.",
+                            "None yet. Add names below, e.g. a former name, alias or alternative spelling.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -112,7 +113,7 @@ fun AliasEditor(ctx: AppContext, artist: Artist, lib: Library, onDismiss: () -> 
                     val unlink: (@Composable () -> Unit)? = if (isGroup) {
                         {
                             IconButton(onClick = { store.unlinkName(alias) }) {
-                                Icon(Icons.Default.Close, "Αποσύνδεση")
+                                Icon(Icons.Default.Close, "Unlink")
                             }
                         }
                     } else null
@@ -128,7 +129,7 @@ fun AliasEditor(ctx: AppContext, artist: Artist, lib: Library, onDismiss: () -> 
                 if (suggestions.isNotEmpty()) {
                     item {
                         Text(
-                            "Μήπως είναι ο ίδιος;",
+                            "Same artist?",
                             Modifier.padding(top = 16.dp),
                             style = MaterialTheme.typography.labelLarge,
                         )
@@ -137,7 +138,7 @@ fun AliasEditor(ctx: AppContext, artist: Artist, lib: Library, onDismiss: () -> 
                         ListItem(
                             headlineContent = { Text(name) },
                             leadingContent = { Icon(Icons.Default.AutoAwesome, null, tint = MaterialTheme.colorScheme.primary) },
-                            trailingContent = { Icon(Icons.Default.Add, "Σύνδεση") },
+                            trailingContent = { Icon(Icons.Default.Add, "Link") },
                             modifier = Modifier.clickable { link(name) },
                         )
                     }
@@ -148,32 +149,32 @@ fun AliasEditor(ctx: AppContext, artist: Artist, lib: Library, onDismiss: () -> 
                     OutlinedTextField(
                         query, { query = it },
                         Modifier.fillMaxWidth(),
-                        label = { Text("Πρόσθεσε όνομα") },
+                        label = { Text("Add name") },
                         leadingIcon = { Icon(Icons.Default.Search, null) },
                         singleLine = true,
                     )
                     if (query.isNotBlank() && norm(query) !in ownNames) {
                         TextButton(onClick = { link(query.trim()); query = "" }) {
                             Icon(Icons.Default.Add, null)
-                            Text("Πρόσθεσε «${query.trim()}»")
+                            Text("Add “${query.trim()}”")
                         }
                     }
                 }
                 items(matches) { name ->
                     val inLib = lib.artists.firstOrNull { a -> norm(a.name) == norm(name) || a.aliases.any { norm(it) == norm(name) } }
                     val sub: (@Composable () -> Unit)? = if (inLib != null) {
-                        { Text("${inLib.songs.size} τραγούδια") }
+                        { Text(songCount(inLib.songs.size)) }
                     } else null
                     ListItem(
                         headlineContent = { Text(name) },
                         supportingContent = sub,
-                        trailingContent = { Icon(Icons.Default.Add, "Σύνδεση") },
+                        trailingContent = { Icon(Icons.Default.Add, "Link") },
                         modifier = Modifier.clickable { link(name); query = "" },
                     )
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Τέλος") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
     )
 }
 

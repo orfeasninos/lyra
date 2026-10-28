@@ -232,8 +232,8 @@ class MusicController(
     private fun nextQueueName(): String {
         val used = store.queues.value.map { it.name }.toSet()
         var n = 1
-        while ("Ουρά $n" in used) n++
-        return "Ουρά $n"
+        while ("Queue $n" in used) n++
+        return "Queue $n"
     }
 
     private fun saveActiveQueue() {

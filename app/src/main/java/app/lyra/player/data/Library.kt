@@ -46,7 +46,7 @@ class Library(
             perSong[s.id] = refs
         }
         songArtists = perSong
-        rawArtistNames = rawNames.sortedBy { it.lowercase() }
+        rawArtistNames = rawNames.sortedWith(byName { it })
 
         // Για καλλιτέχνες χωρίς ομάδα, η πιο συχνή γραφή γίνεται το όνομα
         fun displayFor(key: String): String {
@@ -64,11 +64,11 @@ class Library(
             albumMap.getOrPut(key) { ArrayList() } += s
         }
         albums = albumMap.map { (key, list) ->
-            val sorted = list.sortedWith(compareBy<Song> { it.track }.thenBy { it.fileName.lowercase() })
+            val sorted = list.sortedWith(compareBy<Song> { it.track }.then(byName { it.fileName }))
             val first = sorted.first()
             val artistName = first.albumArtistRaw?.let { resolveName(it) }
                 ?: perSong[first.id]?.firstOrNull()?.key?.let { k ->
-                    if (sorted.all { perSong[it.id]?.firstOrNull()?.key == k }) displayFor(k) else "Διάφοροι καλλιτέχνες"
+                    if (sorted.all { perSong[it.id]?.firstOrNull()?.key == k }) displayFor(k) else "Various Artists"
                 } ?: first.artistRaw
             Album(
                 key = key,
@@ -78,7 +78,7 @@ class Library(
                 folder = first.folder,
                 songs = sorted,
             )
-        }.sortedBy { it.title.lowercase() }
+        }.sortedWith(byName { it.title })
 
         // 3. Καλλιτέχνες
         val artistSongs = LinkedHashMap<String, MutableList<Song>>()
@@ -106,15 +106,15 @@ class Library(
                 key = key,
                 name = name,
                 aliases = distinctAliases,
-                songs = list.sortedWith(compareBy<Song> { it.album.lowercase() }.thenBy { it.track }),
+                songs = list.sortedWith(byName<Song> { it.album }.thenBy { it.track }),
                 albumCount = list.map { it.album.lowercase() }.distinct().size,
             )
-        }.sortedBy { it.name.lowercase() }
+        }.sortedWith(byName { it.name })
 
         // 4. Φάκελοι
         folders = songs.groupBy { it.folder }
-            .map { (path, list) -> Folder(path, list.sortedBy { it.fileName.lowercase() }) }
-            .sortedBy { it.path.lowercase() }
+            .map { (path, list) -> Folder(path, list.sortedWith(byName { it.fileName })) }
+            .sortedWith(byName { it.path })
     }
 
     fun artistsOf(song: Song): List<ArtistRef> = songArtists[song.id].orEmpty()
@@ -131,17 +131,17 @@ class Library(
 
     /** Αναζήτηση που "καταλαβαίνει" και τα ψευδώνυμα. */
     fun search(query: String): SearchResult {
-        val q = norm(query)
+        val q = searchKey(query)
         if (q.isEmpty()) return SearchResult(emptyList(), emptyList(), emptyList())
         val matchedArtists = artists.filter { a ->
-            norm(a.name).contains(q) || a.aliases.any { norm(it).contains(q) }
+            searchKey(a.name).contains(q) || a.aliases.any { searchKey(it).contains(q) }
         }
         val artistKeys = matchedArtists.map { it.key }.toSet()
         val matchedSongs = songs.filter { s ->
-            norm(s.title).contains(q) || norm(s.album).contains(q) ||
-                norm(s.artistRaw).contains(q) || artistsOf(s).any { it.key in artistKeys }
+            searchKey(s.title).contains(q) || searchKey(s.album).contains(q) ||
+                searchKey(s.artistRaw).contains(q) || artistsOf(s).any { it.key in artistKeys }
         }
-        val matchedAlbums = albums.filter { norm(it.title).contains(q) || norm(it.artistName).contains(q) }
+        val matchedAlbums = albums.filter { searchKey(it.title).contains(q) || searchKey(it.artistName).contains(q) }
         return SearchResult(matchedSongs.take(200), matchedAlbums.take(50), matchedArtists.take(50))
     }
 

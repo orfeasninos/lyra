@@ -144,7 +144,7 @@ fun FlipCover(
         if (back != null) {
             AssistChip(
                 onClick = { showBack = !showBack },
-                label = { Text(if (backVisible) "Εξώφυλλο" else "Οπισθόφυλλο") },
+                label = { Text(if (backVisible) "Front cover" else "Back cover") },
                 leadingIcon = {
                     Icon(if (backVisible) Icons.Default.FlipToFront else Icons.Default.FlipToBack, null, Modifier.size(18.dp))
                 },
@@ -194,7 +194,7 @@ fun CoverViewer(loader: ArtworkLoader, song: Song?, side: Side, onDismiss: () ->
                 )
             }
             IconButton(onClick = onDismiss, Modifier.align(Alignment.TopEnd).padding(12.dp)) {
-                Icon(Icons.Default.Close, "Κλείσιμο", tint = Color.White)
+                Icon(Icons.Default.Close, "Close", tint = Color.White)
             }
         }
     }

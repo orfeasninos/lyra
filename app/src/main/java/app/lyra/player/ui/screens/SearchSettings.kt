@@ -45,6 +45,8 @@ import app.lyra.player.data.AppStore
 import app.lyra.player.ui.AppContext
 import app.lyra.player.ui.Routes
 import app.lyra.player.ui.components.SongRow
+import app.lyra.player.ui.components.count
+import app.lyra.player.ui.components.songCount
 
 @Composable
 fun SearchScreen(ctx: AppContext) {
@@ -59,12 +61,12 @@ fun SearchScreen(ctx: AppContext) {
         TextField(
             query, { query = it },
             Modifier.fillMaxWidth().focusRequester(focus),
-            placeholder = { Text("Τραγούδια, άλμπουμ, καλλιτέχνες (και ψευδώνυμα)") },
+            placeholder = { Text("Songs, albums, artists (and aliases)") },
             leadingIcon = {
-                IconButton(onClick = { ctx.nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Πίσω") }
+                IconButton(onClick = { ctx.nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
             },
             trailingIcon = {
-                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Close, "Καθαρισμός") }
+                if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Close, "Clear") }
             },
             singleLine = true,
             colors = TextFieldDefaults.colors(
@@ -73,7 +75,7 @@ fun SearchScreen(ctx: AppContext) {
             ),
         )
         LazyColumn(Modifier.fillMaxSize()) {
-            if (result.artists.isNotEmpty()) item { Header("Καλλιτέχνες") }
+            if (result.artists.isNotEmpty()) item { Header("Artists") }
             items(result.artists, key = { "a" + it.key }) { a ->
                 val aka: (@Composable () -> Unit)? = if (a.aliases.isNotEmpty()) {
                     { Text("aka ${a.aliases.joinToString(", ")}", maxLines = 1, overflow = TextOverflow.Ellipsis) }
@@ -85,7 +87,7 @@ fun SearchScreen(ctx: AppContext) {
                     modifier = Modifier.clickable { ctx.nav.navigate(Routes.artist(a.key, a.name)) },
                 )
             }
-            if (result.albums.isNotEmpty()) item { Header("Άλμπουμ") }
+            if (result.albums.isNotEmpty()) item { Header("Albums") }
             items(result.albums, key = { "l" + it.key }) { al ->
                 ListItem(
                     headlineContent = { Text(al.title) },
@@ -94,7 +96,7 @@ fun SearchScreen(ctx: AppContext) {
                     modifier = Modifier.clickable { ctx.nav.navigate(Routes.album(al.key)) },
                 )
             }
-            if (result.songs.isNotEmpty()) item { Header("Τραγούδια") }
+            if (result.songs.isNotEmpty()) item { Header("Songs") }
             itemsIndexed(result.songs, key = { _, s -> "s${s.id}" }) { i, s ->
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
@@ -125,25 +127,25 @@ fun SettingsScreen(ctx: AppContext) {
     var text by remember(seps) { mutableStateOf(seps.joinToString("\n") { "\"$it\"" }) }
 
     Column(Modifier.fillMaxSize()) {
-        BackBar(ctx, "Ρυθμίσεις")
+        BackBar(ctx, "Settings")
         Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-            Text("Βιβλιοθήκη", style = MaterialTheme.typography.titleMedium)
+            Text("Library", style = MaterialTheme.typography.titleMedium)
             Text(
-                "${lib.songs.size} τραγούδια · ${lib.albums.size} άλμπουμ · ${lib.artists.size} καλλιτέχνες",
+                "${songCount(lib.songs.size)} · ${count(lib.albums.size, "album")} · ${count(lib.artists.size, "artist")}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
             Button(onClick = { ctx.vm.scan() }, enabled = !scanning) {
-                Text(if (scanning) "Σάρωση…" else "Νέα σάρωση")
+                Text(if (scanning) "Scanning…" else "Rescan")
             }
 
             Spacer(Modifier.height(28.dp))
-            Text("Διαχωριστικά καλλιτεχνών", style = MaterialTheme.typography.titleMedium)
+            Text("Artist separators", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Όταν ένα tag γράφει π.χ. «Artist A feat. Artist B», το τραγούδι εμφανίζεται και στους δύο. " +
-                    "Ένα διαχωριστικό ανά γραμμή, μέσα σε εισαγωγικά. Αν ένα όνομα όπως «Simon & Garfunkel» " +
-                    "δηλωθεί σε καλλιτέχνη, δεν σπάει ποτέ.",
+                "When a tag says e.g. “Artist A feat. Artist B”, the song shows up under both artists. " +
+                    "One separator per line, in quotes. A name like “Simon & Garfunkel” that you have added " +
+                    "to an artist is never split.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -156,9 +158,9 @@ fun SettingsScreen(ctx: AppContext) {
                     if (t.length >= 2 && t.startsWith("\"") && t.endsWith("\"")) t.substring(1, t.length - 1) else t
                 }.filter { it.isNotEmpty() }
                 ctx.vm.store.setSeparators(list)
-            }) { Text("Αποθήκευση") }
+            }) { Text("Save") }
             OutlinedButton(onClick = { ctx.vm.store.setSeparators(AppStore.DEFAULT_SEPARATORS) }) {
-                Text("Επαναφορά προεπιλογών")
+                Text("Restore defaults")
             }
         }
     }

@@ -60,14 +60,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.lyra.player.data.PlayQueue
+import app.lyra.player.data.byName
 import app.lyra.player.ui.AppContext
 import app.lyra.player.ui.Routes
 import app.lyra.player.ui.components.Artwork
 import app.lyra.player.ui.components.SongRow
 import app.lyra.player.ui.components.TextInputDialog
+import app.lyra.player.ui.components.songCount
 import kotlinx.coroutines.launch
 
-private val TABS = listOf("Τραγούδια", "Φάκελοι", "Άλμπουμ", "Καλλιτέχνες", "Playlists", "Ουρές")
+private val TABS = listOf("Songs", "Folders", "Albums", "Artists", "Playlists", "Queues")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -79,8 +81,8 @@ fun HomeScreen(ctx: AppContext) {
             windowInsets = WindowInsets(0),
             title = { Text("Lyra", fontWeight = FontWeight.SemiBold) },
             actions = {
-                IconButton(onClick = { ctx.nav.navigate(Routes.SEARCH) }) { Icon(Icons.Default.Search, "Αναζήτηση") }
-                IconButton(onClick = { ctx.nav.navigate(Routes.SETTINGS) }) { Icon(Icons.Default.Settings, "Ρυθμίσεις") }
+                IconButton(onClick = { ctx.nav.navigate(Routes.SEARCH) }) { Icon(Icons.Default.Search, "Search") }
+                IconButton(onClick = { ctx.nav.navigate(Routes.SETTINGS) }) { Icon(Icons.Default.Settings, "Settings") }
             },
         )
         ScrollableTabRow(selectedTabIndex = pager.currentPage, edgePadding = 8.dp) {
@@ -109,14 +111,14 @@ fun HomeScreen(ctx: AppContext) {
 private fun SongsTab(ctx: AppContext) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
     val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
-    val songs = remember(lib) { lib.songs.sortedBy { it.title.lowercase() } }
+    val songs = remember(lib) { lib.songs.sortedWith(byName { it.title }) }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 FilledTonalButton(onClick = { ctx.vm.music.shuffleAll(songs) }) {
                     Icon(Icons.Default.Shuffle, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Τυχαία όλα (${songs.size})")
+                    Text("Shuffle all (${songs.size})")
                 }
             }
         }
@@ -139,7 +141,7 @@ private fun FoldersTab(ctx: AppContext) {
                 headlineContent = { Text(f.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 supportingContent = {
                     Text(
-                        "${f.songs.size} τραγούδια · ${f.path.removePrefix("/storage/emulated/0")}",
+                        "${songCount(f.songs.size)} · ${f.path.removePrefix("/storage/emulated/0")}",
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 },
@@ -189,7 +191,7 @@ private fun ArtistsTab(ctx: AppContext) {
                 supportingContent = {
                     val aka = if (a.aliases.isNotEmpty()) " · aka ${a.aliases.joinToString(", ")}" else ""
                     Text(
-                        "${a.songs.size} τραγούδια$aka",
+                        "${songCount(a.songs.size)}$aka",
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 },
@@ -218,7 +220,7 @@ private fun PlaylistsTab(ctx: AppContext) {
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             ListItem(
-                headlineContent = { Text("Νέα playlist") },
+                headlineContent = { Text("New playlist") },
                 leadingContent = { Icon(Icons.Default.Add, null) },
                 modifier = Modifier.clickable { creating = true },
             )
@@ -226,14 +228,14 @@ private fun PlaylistsTab(ctx: AppContext) {
         items(playlists, key = { it.id }) { p ->
             ListItem(
                 headlineContent = { Text(p.name) },
-                supportingContent = { Text("${p.songIds.size} τραγούδια") },
+                supportingContent = { Text(songCount(p.songIds.size)) },
                 leadingContent = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, null, tint = MaterialTheme.colorScheme.primary) },
                 modifier = Modifier.clickable { ctx.nav.navigate(Routes.playlist(p.id)) },
             )
         }
     }
     if (creating) {
-        TextInputDialog("Νέα playlist", "", "Δημιουργία", { creating = false }) { ctx.vm.store.createPlaylist(it) }
+        TextInputDialog("New playlist", "", "Create", { creating = false }) { ctx.vm.store.createPlaylist(it) }
     }
 }
 
@@ -247,7 +249,7 @@ private fun QueuesTab(ctx: AppContext) {
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             Text(
-                "Κάθε ουρά θυμάται πού σταμάτησες. Πάτα για εναλλαγή.",
+                "Each queue remembers where you left off. Tap to switch.",
                 Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -267,7 +269,7 @@ private fun QueuesTab(ctx: AppContext) {
                 },
                 supportingContent = {
                     Text(
-                        "${q.songIds.size} τραγούδια" + (current?.let { " · ${it.title}" } ?: ""),
+                        songCount(q.songIds.size) + (current?.let { " · ${it.title}" } ?: ""),
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 },
@@ -277,10 +279,10 @@ private fun QueuesTab(ctx: AppContext) {
                 },
                 trailingContent = {
                     Box {
-                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Επιλογές") }
+                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Options") }
                         DropdownMenu(menu, { menu = false }) {
-                            DropdownMenuItem(text = { Text("Μετονομασία") }, onClick = { menu = false; renaming = q })
-                            DropdownMenuItem(text = { Text("Διαγραφή") }, onClick = { menu = false; ctx.vm.music.deleteQueue(q.id) })
+                            DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; renaming = q })
+                            DropdownMenuItem(text = { Text("Delete") }, onClick = { menu = false; ctx.vm.music.deleteQueue(q.id) })
                         }
                     }
                 },
@@ -293,11 +295,11 @@ private fun QueuesTab(ctx: AppContext) {
             TextButton(onClick = { ctx.vm.music.newQueue(emptyList()) }, Modifier.padding(8.dp)) {
                 Icon(Icons.Default.Add, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Νέα κενή ουρά")
+                Text("New empty queue")
             }
         }
     }
     renaming?.let { q ->
-        TextInputDialog("Μετονομασία ουράς", q.name, "Αποθήκευση", { renaming = null }) { ctx.vm.music.renameQueue(q.id, it) }
+        TextInputDialog("Rename queue", q.name, "Save", { renaming = null }) { ctx.vm.music.renameQueue(q.id, it) }
     }
 }

@@ -49,6 +49,10 @@ import app.lyra.player.data.ArtworkLoader
 import app.lyra.player.data.Library
 import app.lyra.player.data.Song
 
+fun count(n: Int, noun: String) = if (n == 1) "1 $noun" else "$n ${noun}s"
+
+fun songCount(n: Int) = count(n, "song")
+
 fun formatTime(ms: Long): String {
     val total = (ms / 1000).coerceAtLeast(0)
     val h = total / 3600
@@ -117,36 +121,36 @@ fun SongRow(
             )
         }
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Επιλογές") }
+            IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Options") }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 val close = { menu = false }
                 DropdownMenuItem(
-                    text = { Text("Παίξε επόμενο") },
+                    text = { Text("Play next") },
                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, null) },
                     onClick = { close(); actions.playNext(song) },
                 )
                 DropdownMenuItem(
-                    text = { Text("Πρόσθεσε στην ουρά") },
+                    text = { Text("Add to queue") },
                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.QueueMusic, null) },
                     onClick = { close(); actions.addToQueue(song) },
                 )
                 DropdownMenuItem(
-                    text = { Text("Νέα ουρά από εδώ") },
+                    text = { Text("New queue from here") },
                     leadingIcon = { Icon(Icons.Default.Queue, null) },
                     onClick = { close(); actions.newQueueFrom(song) },
                 )
                 DropdownMenuItem(
-                    text = { Text("Πρόσθεσε σε playlist") },
+                    text = { Text("Add to playlist") },
                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null) },
                     onClick = { close(); actions.addToPlaylist(song) },
                 )
                 DropdownMenuItem(
-                    text = { Text("Πήγαινε στο άλμπουμ") },
+                    text = { Text("Go to album") },
                     leadingIcon = { Icon(Icons.Default.Album, null) },
                     onClick = { close(); actions.goToAlbum(song) },
                 )
                 DropdownMenuItem(
-                    text = { Text("Πήγαινε στον καλλιτέχνη") },
+                    text = { Text("Go to artist") },
                     leadingIcon = { Icon(Icons.Default.Person, null) },
                     onClick = { close(); actions.goToArtist(song) },
                 )
@@ -172,15 +176,15 @@ fun AddToPlaylistDialog(store: AppStore, songs: List<Song>, onDismiss: () -> Uni
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (creating) "Νέα playlist" else "Πρόσθεσε σε playlist") },
+        title = { Text(if (creating) "New playlist" else "Add to playlist") },
         text = {
             if (creating) {
-                OutlinedTextField(name, { name = it }, label = { Text("Όνομα") }, singleLine = true)
+                OutlinedTextField(name, { name = it }, label = { Text("Name") }, singleLine = true)
             } else {
                 LazyColumn(Modifier.heightIn(max = 360.dp)) {
                     item {
                         ListItem(
-                            headlineContent = { Text("Νέα playlist…") },
+                            headlineContent = { Text("New playlist…") },
                             leadingContent = { Icon(Icons.Default.Add, null) },
                             modifier = Modifier.clickable { creating = true },
                         )
@@ -188,7 +192,7 @@ fun AddToPlaylistDialog(store: AppStore, songs: List<Song>, onDismiss: () -> Uni
                     items(playlists, key = { it.id }) { p ->
                         ListItem(
                             headlineContent = { Text(p.name) },
-                            supportingContent = { Text("${p.songIds.size} τραγούδια") },
+                            supportingContent = { Text(songCount(p.songIds.size)) },
                             modifier = Modifier.clickable {
                                 store.addToPlaylist(p.id, songs.map { it.id }); onDismiss()
                             },
@@ -201,9 +205,9 @@ fun AddToPlaylistDialog(store: AppStore, songs: List<Song>, onDismiss: () -> Uni
             if (creating) TextButton(
                 enabled = name.isNotBlank(),
                 onClick = { store.createPlaylist(name, songs.map { it.id }); onDismiss() },
-            ) { Text("Δημιουργία") }
+            ) { Text("Create") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Άκυρο") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
 
@@ -223,6 +227,6 @@ fun TextInputDialog(
         confirmButton = {
             TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text); onDismiss() }) { Text(confirm) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Άκυρο") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

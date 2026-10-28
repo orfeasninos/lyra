@@ -77,7 +77,7 @@ class ArtworkLoader(private val context: Context) {
         // 3. Εικόνα στον φάκελο: cover/folder/front, αλλά ποτέ κάτι που μοιάζει με οπισθόφυλλο
         val best = folderImagesOf(song.folder)
             .filter { img ->
-                val n = img.name.lowercase().substringBeforeLast('.')
+                val n = searchKey(img.name.substringBeforeLast('.'))
                 FRONT_NAME.containsMatchIn(n) && !BACK_NAME.containsMatchIn(n)
             }
             .sortedWith(
@@ -100,7 +100,7 @@ class ArtworkLoader(private val context: Context) {
             decode(pic.data, size)?.let { return it }
         }
         // 2. Εικόνα στον φάκελο
-        val candidates = folderImagesOf(song.folder).filter { BACK_NAME.containsMatchIn(it.name.lowercase().substringBeforeLast('.')) }
+        val candidates = folderImagesOf(song.folder).filter { BACK_NAME.containsMatchIn(searchKey(it.name.substringBeforeLast('.'))) }
         val best = candidates.sortedWith(compareBy<FolderImage> { it.relative.length }.thenBy { it.name.length }).firstOrNull()
         return best?.let { decodeUri(it.uri, size) }
     }
@@ -180,9 +180,9 @@ class ArtworkLoader(private val context: Context) {
     private fun key(song: Song, side: Side, size: Int) = "$side|${song.albumId}|${song.folder}|$size"
 
     companion object {
-        private val FRONT_NAME = Regex("(^|[^a-z])(cover|folder|front|albumart[a-z_]*large|albumart)([^a-z]|$)")
+        private val FRONT_NAME = Regex("(^|\\P{L})(cover|folder|front|albumart[a-z_]*large|albumart)(\\P{L}|$)")
         private val EXACT_FRONT = setOf("cover", "folder", "front", "albumart")
-        private val BACK_NAME = Regex("(^|[^a-z])(back|rear|inlay|tray|traycard|back ?cover|πίσω|οπισθόφυλλο)([^a-zα-ω]|$)")
+        private val BACK_NAME = Regex("(^|\\P{L})(back|rear|inlay|tray|traycard|back ?cover|πισω|οπισθοφυλλο)(\\P{L}|$)")
 
         private fun maxCacheBytes(): Int =
             (Runtime.getRuntime().maxMemory() / 8).coerceAtMost(64L * 1024 * 1024).toInt()

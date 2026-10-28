@@ -64,6 +64,7 @@ import app.lyra.player.ui.components.FlipCover
 import app.lyra.player.ui.components.RemoveMenuItem
 import app.lyra.player.ui.components.SongRow
 import app.lyra.player.ui.components.formatTime
+import app.lyra.player.ui.components.songCount
 
 @Composable
 fun MiniPlayer(ctx: AppContext, song: Song, state: PlaybackState, onOpen: () -> Unit) {
@@ -89,9 +90,9 @@ fun MiniPlayer(ctx: AppContext, song: Song, state: PlaybackState, onOpen: () -> 
                     )
                 }
                 IconButton(onClick = { ctx.vm.music.togglePlay() }) {
-                    Icon(if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Αναπαραγωγή/Παύση")
+                    Icon(if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/Pause")
                 }
-                IconButton(onClick = { ctx.vm.music.next() }) { Icon(Icons.Default.SkipNext, "Επόμενο") }
+                IconButton(onClick = { ctx.vm.music.next() }) { Icon(Icons.Default.SkipNext, "Next") }
             }
         }
     }
@@ -114,14 +115,14 @@ fun PlayerScreen(ctx: AppContext) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { ctx.nav.popBackStack() }) { Icon(Icons.Default.KeyboardArrowDown, "Κλείσιμο") }
+            IconButton(onClick = { ctx.nav.popBackStack() }) { Icon(Icons.Default.KeyboardArrowDown, "Close") }
             Text(
-                "Παίζει τώρα",
+                "Now playing",
                 Modifier.weight(1f),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelLarge,
             )
-            IconButton(onClick = { showQueue = true }) { Icon(Icons.AutoMirrored.Filled.QueueMusic, "Ουρά") }
+            IconButton(onClick = { showQueue = true }) { Icon(Icons.AutoMirrored.Filled.QueueMusic, "Queue") }
         }
 
         Spacer(Modifier.height(16.dp))
@@ -183,27 +184,27 @@ fun PlayerScreen(ctx: AppContext) {
         ) {
             IconButton(onClick = { ctx.vm.music.toggleShuffle() }) {
                 Icon(
-                    Icons.Default.Shuffle, "Τυχαία σειρά",
+                    Icons.Default.Shuffle, "Shuffle",
                     tint = if (state.shuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = { ctx.vm.music.previous() }, Modifier.size(56.dp)) {
-                Icon(Icons.Default.SkipPrevious, "Προηγούμενο", Modifier.size(36.dp))
+                Icon(Icons.Default.SkipPrevious, "Previous", Modifier.size(36.dp))
             }
             FilledIconButton(
                 onClick = { ctx.vm.music.togglePlay() },
                 Modifier.size(72.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(),
             ) {
-                Icon(if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Αναπαραγωγή/Παύση", Modifier.size(40.dp))
+                Icon(if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Play/Pause", Modifier.size(40.dp))
             }
             IconButton(onClick = { ctx.vm.music.next() }, Modifier.size(56.dp)) {
-                Icon(Icons.Default.SkipNext, "Επόμενο", Modifier.size(36.dp))
+                Icon(Icons.Default.SkipNext, "Next", Modifier.size(36.dp))
             }
             IconButton(onClick = { ctx.vm.music.cycleRepeat() }) {
                 Icon(
                     if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
-                    "Επανάληψη",
+                    "Repeat",
                     tint = if (state.repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -224,13 +225,13 @@ private fun QueueList(ctx: AppContext, state: PlaybackState) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
     val queues by ctx.vm.store.queues.collectAsStateWithLifecycle()
     val activeId by ctx.vm.store.activeQueueId.collectAsStateWithLifecycle()
-    val name = queues.firstOrNull { it.id == activeId }?.name ?: "Ουρά"
+    val name = queues.firstOrNull { it.id == activeId }?.name ?: "Queue"
     val listState = rememberLazyListState()
     LaunchedEffect(Unit) { if (state.index > 2) listState.scrollToItem(state.index - 2) }
 
     Column(Modifier.fillMaxWidth()) {
         Text(
-            "$name · ${state.queue.size} τραγούδια",
+            "$name · ${songCount(state.queue.size)}",
             Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             style = MaterialTheme.typography.titleMedium,
         )
@@ -244,16 +245,16 @@ private fun QueueList(ctx: AppContext, state: PlaybackState) {
                         isCurrent = i == state.index,
                         extraMenu = { close ->
                             if (i > 0) DropdownMenuItem(
-                                text = { Text("Μετακίνηση πάνω") },
+                                text = { Text("Move up") },
                                 leadingIcon = { Icon(Icons.Default.ArrowUpward, null) },
                                 onClick = { close(); ctx.vm.music.moveInQueue(i, i - 1) },
                             )
                             if (i < state.queue.lastIndex) DropdownMenuItem(
-                                text = { Text("Μετακίνηση κάτω") },
+                                text = { Text("Move down") },
                                 leadingIcon = { Icon(Icons.Default.ArrowDownward, null) },
                                 onClick = { close(); ctx.vm.music.moveInQueue(i, i + 1) },
                             )
-                            RemoveMenuItem("Αφαίρεση από την ουρά", close) { ctx.vm.music.removeFromQueue(i) }
+                            RemoveMenuItem("Remove from queue", close) { ctx.vm.music.removeFromQueue(i) }
                         },
                     )
                 }

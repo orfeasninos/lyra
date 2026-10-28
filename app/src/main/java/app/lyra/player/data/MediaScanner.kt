@@ -56,7 +56,7 @@ object MediaScanner {
                 val fileName = (if (nameCol >= 0) c.getString(nameCol) else null)
                     ?: path.substringAfterLast('/')
                 val artist = (if (artistCol >= 0) c.getString(artistCol) else null)
-                    ?.takeUnless { it.isBlank() || it == MediaStore.UNKNOWN_STRING } ?: "Άγνωστος καλλιτέχνης"
+                    ?.takeUnless { it.isBlank() || it == MediaStore.UNKNOWN_STRING } ?: "Unknown artist"
                 songs += Song(
                     id = id,
                     uri = ContentUris.withAppendedId(collection, id),
@@ -64,7 +64,7 @@ object MediaScanner {
                         ?: fileName.substringBeforeLast('.'),
                     artistRaw = artist,
                     album = (if (albumCol >= 0) c.getString(albumCol) else null)?.takeUnless { it.isBlank() }
-                        ?: "Άγνωστο άλμπουμ",
+                        ?: "Unknown album",
                     albumId = if (albumIdCol >= 0) c.getLong(albumIdCol) else 0L,
                     albumArtistRaw = if (albumArtistCol >= 0) c.getString(albumArtistCol)?.takeUnless { it.isBlank() } else null,
                     durationMs = if (durCol >= 0) c.getLong(durCol) else 0L,

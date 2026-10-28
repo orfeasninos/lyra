@@ -56,7 +56,9 @@ import app.lyra.player.ui.components.FlipCover
 import app.lyra.player.ui.components.RemoveMenuItem
 import app.lyra.player.ui.components.SongRow
 import app.lyra.player.ui.components.TextInputDialog
+import app.lyra.player.ui.components.count
 import app.lyra.player.ui.components.formatTime
+import app.lyra.player.ui.components.songCount
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +67,7 @@ fun BackBar(ctx: AppContext, title: String, actions: @Composable () -> Unit = {}
         windowInsets = WindowInsets(0),
         title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         navigationIcon = {
-            IconButton(onClick = { ctx.nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Πίσω") }
+            IconButton(onClick = { ctx.nav.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
         },
         actions = { actions() },
     )
@@ -75,13 +77,13 @@ fun BackBar(ctx: AppContext, title: String, actions: @Composable () -> Unit = {}
 fun PlayButtons(ctx: AppContext, songs: List<Song>, modifier: Modifier = Modifier) {
     Row(modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Button(onClick = { ctx.vm.music.play(songs) }, enabled = songs.isNotEmpty()) {
-            Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Αναπαραγωγή")
+            Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Play")
         }
         FilledTonalButton(onClick = { ctx.vm.music.shuffleAll(songs) }, enabled = songs.isNotEmpty()) {
-            Icon(Icons.Default.Shuffle, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Τυχαία")
+            Icon(Icons.Default.Shuffle, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Shuffle")
         }
         IconButton(onClick = { ctx.addToPlaylist(songs) }, enabled = songs.isNotEmpty()) {
-            Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Σε playlist")
+            Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Add to playlist")
         }
     }
 }
@@ -90,7 +92,7 @@ fun PlayButtons(ctx: AppContext, songs: List<Song>, modifier: Modifier = Modifie
 private fun Missing(ctx: AppContext, what: String) {
     Column(Modifier.fillMaxSize()) {
         BackBar(ctx, what)
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Δεν βρέθηκε") }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Not found") }
     }
 }
 
@@ -100,7 +102,7 @@ private fun Missing(ctx: AppContext, what: String) {
 fun AlbumScreen(ctx: AppContext, key: String) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
     val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
-    val album = lib.album(key) ?: return Missing(ctx, "Άλμπουμ")
+    val album = lib.album(key) ?: return Missing(ctx, "Album")
     val total = album.songs.sumOf { it.durationMs }
 
     Column(Modifier.fillMaxSize()) {
@@ -121,7 +123,7 @@ fun AlbumScreen(ctx: AppContext, key: String) {
                     Text(
                         listOfNotNull(
                             album.year.takeIf { it > 0 }?.toString(),
-                            "${album.songs.size} τραγούδια",
+                            songCount(album.songs.size),
                             formatTime(total),
                         ).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
@@ -155,7 +157,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
     val artist = lib.artist(key) ?: lib.artists.firstOrNull { a ->
         norm(a.name) == norm(anchor) || a.aliases.any { norm(it) == norm(anchor) }
     }
-    if (artist == null) return Missing(ctx, anchor.ifEmpty { "Καλλιτέχνης" })
+    if (artist == null) return Missing(ctx, anchor.ifEmpty { "Artist" })
     SideEffect { if (artist.name != anchor) anchor = artist.name }
 
     val albums = remember(artist) {
@@ -164,7 +166,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
 
     Column(Modifier.fillMaxSize()) {
         BackBar(ctx, artist.name) {
-            IconButton(onClick = { editing = true }) { Icon(Icons.Default.Edit, "Ονόματα καλλιτέχνη") }
+            IconButton(onClick = { editing = true }) { Icon(Icons.Default.Edit, "Artist names") }
         }
         LazyColumn(Modifier.fillMaxSize()) {
             item {
@@ -172,13 +174,13 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
                     Text(artist.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
                     if (artist.aliases.isNotEmpty()) {
                         Text(
-                            "Γνωστός/ή και ως: ${artist.aliases.joinToString(", ")}",
+                            "Also known as: ${artist.aliases.joinToString(", ")}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
                     Text(
-                        "${artist.songs.size} τραγούδια · ${albums.size} άλμπουμ",
+                        "${songCount(artist.songs.size)} · ${count(albums.size, "album")}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -186,7 +188,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
                 PlayButtons(ctx, artist.songs)
                 if (albums.isNotEmpty()) {
                     Text(
-                        "Άλμπουμ", Modifier.padding(start = 16.dp, top = 8.dp),
+                        "Albums", Modifier.padding(start = 16.dp, top = 8.dp),
                         style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     LazyRow(
@@ -207,7 +209,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
                     }
                 }
                 Text(
-                    "Τραγούδια", Modifier.padding(start = 16.dp, top = 8.dp),
+                    "Songs", Modifier.padding(start = 16.dp, top = 8.dp),
                     style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -232,7 +234,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
 fun FolderScreen(ctx: AppContext, path: String) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
     val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
-    val folder = lib.folder(path) ?: return Missing(ctx, "Φάκελος")
+    val folder = lib.folder(path) ?: return Missing(ctx, "Folder")
 
     Column(Modifier.fillMaxSize()) {
         BackBar(ctx, folder.name)
@@ -273,10 +275,10 @@ fun PlaylistScreen(ctx: AppContext, id: String) {
     Column(Modifier.fillMaxSize()) {
         BackBar(ctx, playlist.name) {
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Επιλογές") }
+                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "Options") }
                 DropdownMenu(menu, { menu = false }) {
-                    DropdownMenuItem(text = { Text("Μετονομασία") }, onClick = { menu = false; renaming = true })
-                    DropdownMenuItem(text = { Text("Διαγραφή playlist") }, onClick = {
+                    DropdownMenuItem(text = { Text("Rename") }, onClick = { menu = false; renaming = true })
+                    DropdownMenuItem(text = { Text("Delete playlist") }, onClick = {
                         menu = false
                         ctx.vm.store.deletePlaylist(playlist.id)
                         ctx.nav.popBackStack()
@@ -287,7 +289,7 @@ fun PlaylistScreen(ctx: AppContext, id: String) {
         LazyColumn(Modifier.fillMaxSize()) {
             item {
                 Text(
-                    "${songs.size} τραγούδια · ${formatTime(songs.sumOf { it.durationMs })}",
+                    "${songCount(songs.size)} · ${formatTime(songs.sumOf { it.durationMs })}",
                     Modifier.padding(horizontal = 16.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -301,23 +303,23 @@ fun PlaylistScreen(ctx: AppContext, id: String) {
                     isCurrent = playback.currentSongId == s.id,
                     extraMenu = { close ->
                         if (pos > 0) DropdownMenuItem(
-                            text = { Text("Μετακίνηση πάνω") },
+                            text = { Text("Move up") },
                             leadingIcon = { Icon(Icons.Default.ArrowUpward, null) },
                             onClick = { close(); ctx.vm.store.moveInPlaylist(playlist.id, pos, pos - 1) },
                         )
                         if (pos < playlist.songIds.lastIndex) DropdownMenuItem(
-                            text = { Text("Μετακίνηση κάτω") },
+                            text = { Text("Move down") },
                             leadingIcon = { Icon(Icons.Default.ArrowDownward, null) },
                             onClick = { close(); ctx.vm.store.moveInPlaylist(playlist.id, pos, pos + 1) },
                         )
-                        RemoveMenuItem("Αφαίρεση από playlist", close) { ctx.vm.store.removeFromPlaylist(playlist.id, pos) }
+                        RemoveMenuItem("Remove from playlist", close) { ctx.vm.store.removeFromPlaylist(playlist.id, pos) }
                     },
                 )
             }
         }
     }
     if (renaming) {
-        TextInputDialog("Μετονομασία", playlist.name, "Αποθήκευση", { renaming = false }) {
+        TextInputDialog("Rename", playlist.name, "Save", { renaming = false }) {
             ctx.vm.store.renamePlaylist(playlist.id, it)
         }
     }

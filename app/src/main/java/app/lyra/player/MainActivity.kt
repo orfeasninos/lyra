@@ -98,12 +98,12 @@ private fun PermissionGate(vm: LibraryViewModel) {
             Text("Lyra", style = MaterialTheme.typography.displaySmall)
             Spacer(Modifier.height(12.dp))
             Text(
-                "Χρειάζεται πρόσβαση στη μουσική σου για να τη βρει και να την παίξει. " +
-                    "Η πρόσβαση στις εικόνες χρησιμοποιείται μόνο για εξώφυλλα και οπισθόφυλλα.",
+                "Lyra needs access to your music to find and play it. " +
+                    "Photo access is only used for front and back covers.",
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(24.dp))
-            Button(onClick = { launcher.launch(ALL_PERMISSIONS) }) { Text("Δώσε πρόσβαση") }
+            Button(onClick = { launcher.launch(ALL_PERMISSIONS) }) { Text("Grant access") }
         }
         return
     }
@@ -113,7 +113,7 @@ private fun PermissionGate(vm: LibraryViewModel) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator()
             Spacer(Modifier.height(12.dp))
-            Text("Σάρωση βιβλιοθήκης…")
+            Text("Scanning library…")
         }
         return
     }
