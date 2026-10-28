@@ -19,12 +19,18 @@ class Library(
     private val groupByName: Map<String, ArtistGroup> =
         groups.flatMap { g -> g.names.map { it to g } }.toMap()
 
+    private val groupNames: Map<String, String> = groups.associate { "g:${it.id}" to it.displayName }
+
     /** Όλα τα ονόματα (όπως είναι γραμμένα στα tags) που υπάρχουν στη βιβλιοθήκη. */
     val rawArtistNames: List<String>
 
     private val songArtists: Map<Long, List<ArtistRef>>
 
     val artists: List<Artist>
+    /** Ένας ανά άλμπουμ: ο album artist ή, αν λείπει το tag, ο καλλιτέχνης του άλμπουμ. Keys με πρόθεμα "aa|". */
+    val albumArtists: List<Artist>
+    /** Από το tag composer, με τα ίδια διαχωριστικά και ψευδώνυμα. Keys με πρόθεμα "c|". */
+    val composers: List<Artist>
     val albums: List<Album>
     val folders: List<Folder>
 
@@ -115,7 +121,51 @@ class Library(
             )
         }.sortedWith(byName { it.name })
 
-        // 4. Φάκελοι
+        val artistsByKey = artists.associateBy { it.key }
+
+        // 4. Album-artists
+        val albumsByArtist = LinkedHashMap<String, MutableList<Album>>()
+        val albumArtistNames = HashMap<String, String>()
+        for (al in albums) {
+            val name = al.albumArtist ?: al.artist
+            val k = keyOf(name)
+            albumsByArtist.getOrPut(k) { ArrayList() } += al
+            albumArtistNames.putIfAbsent(k, name)
+        }
+        albumArtists = albumsByArtist.map { (k, list) ->
+            val known = artistsByKey[k]
+            Artist(
+                key = ALBUM_ARTIST_PREFIX + k,
+                name = known?.name ?: albumArtistNames.getValue(k),
+                aliases = known?.aliases.orEmpty(),
+                songs = list.flatMap { it.songs },
+                albumCount = list.size,
+            )
+        }.sortedWith(byName { it.name })
+
+        // 5. Συνθέτες
+        val composerSongs = LinkedHashMap<String, MutableList<Song>>()
+        val composerSpellings = HashMap<String, MutableMap<String, Int>>()
+        for (s in songs) {
+            val raw = s.composer ?: continue
+            for (part in split(raw, separators).distinctBy { keyOf(it) }) {
+                val k = keyOf(part)
+                composerSongs.getOrPut(k) { ArrayList() } += s
+                composerSpellings.getOrPut(k) { HashMap() }.merge(part, 1, Int::plus)
+            }
+        }
+        composers = composerSongs.map { (k, list) ->
+            val known = artistsByKey[k]
+            Artist(
+                key = COMPOSER_PREFIX + k,
+                name = known?.name ?: groupNames[k] ?: composerSpellings.getValue(k).maxBy { it.value }.key,
+                aliases = known?.aliases.orEmpty(),
+                songs = list.sortedWith(byName<Song> { it.album }.thenBy { it.track }),
+                albumCount = list.map { it.album.lowercase() }.distinct().size,
+            )
+        }.sortedWith(byName { it.name })
+
+        // 6. Φάκελοι
         folders = songs.groupBy { it.folder }
             .map { (path, list) -> Folder(path, list.sortedWith(byName { it.fileName })) }
             .sortedWith(byName { it.path })
@@ -126,10 +176,20 @@ class Library(
     fun artistLine(song: Song): String =
         artistsOf(song).joinToString(", ") { it.name }.ifEmpty { song.artistRaw }
 
-    fun artist(key: String): Artist? = artists.firstOrNull { it.key == key }
+    fun artist(key: String): Artist? = artistListFor(key).firstOrNull { it.key == key }
+
+    /** Η λίστα (artists, album-artists ή composers) στην οποία ανήκει ένα key. */
+    fun artistListFor(key: String): List<Artist> = when {
+        key.startsWith(ALBUM_ARTIST_PREFIX) -> albumArtists
+        key.startsWith(COMPOSER_PREFIX) -> composers
+        else -> artists
+    }
     fun album(key: String): Album? = albums.firstOrNull { it.key == key }
     fun folder(path: String): Folder? = folders.firstOrNull { it.path == path }
     fun albumOf(song: Song): Album? = albums.firstOrNull { al -> al.songs.any { it.id == song.id } }
+
+    private fun keyOf(name: String): String =
+        groupByName[norm(name)]?.let { "g:${it.id}" } ?: "n:${norm(name)}"
 
     private fun resolveName(raw: String): String = groupByName[norm(raw)]?.displayName ?: raw.trim()
 
@@ -174,6 +234,8 @@ class Library(
     }
 
     companion object {
+        const val ALBUM_ARTIST_PREFIX = "aa|"
+        const val COMPOSER_PREFIX = "c|"
         val EMPTY = Library(emptyList(), emptyList(), emptyList())
     }
 }

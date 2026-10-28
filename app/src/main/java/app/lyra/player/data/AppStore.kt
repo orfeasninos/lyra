@@ -190,6 +190,44 @@ class AppStore(context: Context) {
         write("playlists.json", arr.toString())
     }
 
+    // ---------- Καρτέλες αρχικής οθόνης ----------
+
+    /** Όλες οι καρτέλες με τη σειρά που τις έβαλε ο χρήστης, και ποιες φαίνονται. */
+    private val _tabs = MutableStateFlow(loadTabs())
+    val tabs: StateFlow<List<TabSetting>> = _tabs.asStateFlow()
+
+    fun setTabs(list: List<TabSetting>) {
+        // Τουλάχιστον μία καρτέλα πρέπει να φαίνεται
+        if (list.none { it.visible }) return
+        _tabs.value = list
+        val arr = JSONArray()
+        list.forEach { arr.put(JSONObject().put("tab", it.tab.name).put("visible", it.visible)) }
+        write("tabs.json", arr.toString())
+    }
+
+    private fun loadTabs(): List<TabSetting> {
+        val arr = readArray("tabs.json") ?: return DEFAULT_TABS
+        val saved = (0 until arr.length()).mapNotNull { i ->
+            val o = arr.optJSONObject(i) ?: return@mapNotNull null
+            HomeTab.entries.firstOrNull { it.name == o.optString("tab") }?.let { TabSetting(it, o.optBoolean("visible", true)) }
+        }.distinctBy { it.tab }
+        // Καρτέλες που προστέθηκαν σε νεότερη έκδοση μπαίνουν στο τέλος
+        val missing = HomeTab.entries.filter { t -> saved.none { it.tab == t } }.map { TabSetting(it, true) }
+        return (saved + missing).takeIf { l -> l.any { it.visible } } ?: DEFAULT_TABS
+    }
+
+    // ---------- Καρτέλα καλλιτεχνών ----------
+
+    private val _artistsView = MutableStateFlow(
+        readText("artists_view.txt")?.trim().let { v -> ArtistsView.entries.firstOrNull { it.name == v } } ?: ArtistsView.ARTISTS
+    )
+    val artistsView: StateFlow<ArtistsView> = _artistsView.asStateFlow()
+
+    fun setArtistsView(view: ArtistsView) {
+        _artistsView.value = view
+        write("artists_view.txt", view.name)
+    }
+
     // ---------- Αγαπημένα ----------
 
     /** Με τη σειρά που προστέθηκαν (το πιο πρόσφατο στο τέλος). */
@@ -326,6 +364,7 @@ class AppStore(context: Context) {
     private fun JSONArray.toLongList(): List<Long> = (0 until length()).map { getLong(it) }
 
     companion object {
+        val DEFAULT_TABS = HomeTab.entries.map { TabSetting(it, true) }
         val DEFAULT_SEPARATORS = listOf(";", " / ", " feat. ", " feat ", " ft. ", " featuring ", " x ")
         fun norm(s: String) = s.trim().lowercase()
     }

@@ -2,6 +2,8 @@ package app.lyra.player.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +18,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -25,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -34,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -125,6 +133,7 @@ fun SettingsScreen(ctx: AppContext) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
     // Τα κενά μετρούν (π.χ. " x "), οπότε τα δείχνουμε μέσα σε εισαγωγικά, ένα ανά γραμμή
     var text by remember(seps) { mutableStateOf(seps.joinToString("\n") { "\"$it\"" }) }
+    var arranging by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize()) {
         BackBar(ctx, "Settings")
@@ -139,6 +148,16 @@ fun SettingsScreen(ctx: AppContext) {
             Button(onClick = { ctx.vm.scan() }, enabled = !scanning) {
                 Text(if (scanning) "Scanning…" else "Rescan")
             }
+
+            Spacer(Modifier.height(28.dp))
+            Text("Tabs", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Change the order of the tabs on the home screen and hide the ones you don't use.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(onClick = { arranging = true }) { Text("Arrange tabs") }
 
             Spacer(Modifier.height(28.dp))
             Text("Artist separators", style = MaterialTheme.typography.titleMedium)
@@ -164,4 +183,51 @@ fun SettingsScreen(ctx: AppContext) {
             }
         }
     }
+    if (arranging) ArrangeTabsDialog(ctx) { arranging = false }
+}
+
+/** Οι αλλαγές εφαρμόζονται και αποθηκεύονται αμέσως, χωρίς κουμπί αποθήκευσης. */
+@Composable
+private fun ArrangeTabsDialog(ctx: AppContext, onDismiss: () -> Unit) {
+    val tabs by ctx.vm.store.tabs.collectAsStateWithLifecycle()
+    val visibleCount = tabs.count { it.visible }
+    fun move(from: Int, to: Int) =
+        ctx.vm.store.setTabs(tabs.toMutableList().apply { add(to, removeAt(from)) })
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Arrange tabs") },
+        text = {
+            Column {
+                tabs.forEachIndexed { i, t ->
+                    // Η τελευταία ορατή καρτέλα δεν μπορεί να κρυφτεί
+                    val canToggle = !t.visible || visibleCount > 1
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = canToggle) {
+                                ctx.vm.store.setTabs(tabs.map { if (it.tab == t.tab) it.copy(visible = !it.visible) else it })
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(t.visible, onCheckedChange = null, enabled = canToggle)
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            t.tab.label,
+                            Modifier.weight(1f),
+                            color = if (t.visible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        IconButton(onClick = { move(i, i - 1) }, enabled = i > 0) {
+                            Icon(Icons.Default.KeyboardArrowUp, "Move up")
+                        }
+                        IconButton(onClick = { move(i, i + 1) }, enabled = i < tabs.lastIndex) {
+                            Icon(Icons.Default.KeyboardArrowDown, "Move down")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        dismissButton = { TextButton(onClick = { ctx.vm.store.setTabs(AppStore.DEFAULT_TABS) }) { Text("Reset") } },
+    )
 }

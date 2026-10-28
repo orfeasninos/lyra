@@ -154,7 +154,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
     var anchor by remember { mutableStateOf(initialName) }
     var editing by remember { mutableStateOf(false) }
 
-    val artist = lib.artist(key) ?: lib.artists.firstOrNull { a ->
+    val artist = lib.artist(key) ?: lib.artistListFor(key).firstOrNull { a ->
         norm(a.name) == norm(anchor) || a.aliases.any { norm(it) == norm(anchor) }
     }
     if (artist == null) return Missing(ctx, anchor.ifEmpty { "Artist" })
@@ -224,7 +224,11 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
     }
 
     if (editing) {
-        AliasEditor(ctx, artist, lib) { editing = false }
+        // Τα ψευδώνυμα είναι κοινά για artists, album-artists και composers:
+        // ο επεξεργαστής δουλεύει πάντα με τον "κανονικό" καλλιτέχνη, χωρίς πρόθεμα στο key
+        val baseKey = artist.key.substringAfter('|')
+        val base = lib.artists.firstOrNull { it.key == baseKey } ?: artist.copy(key = baseKey)
+        AliasEditor(ctx, base, lib) { editing = false }
     }
 }
 

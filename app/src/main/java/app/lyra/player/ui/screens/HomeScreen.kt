@@ -3,6 +3,7 @@ package app.lyra.player.ui.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -54,6 +56,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.lyra.player.data.ArtistsView
+import app.lyra.player.data.HomeTab
 import app.lyra.player.data.PlayQueue
 import app.lyra.player.data.byName
 import app.lyra.player.ui.AppContext
@@ -61,15 +65,17 @@ import app.lyra.player.ui.Routes
 import app.lyra.player.ui.components.Artwork
 import app.lyra.player.ui.components.SongRow
 import app.lyra.player.ui.components.TextInputDialog
+import app.lyra.player.ui.components.count
 import app.lyra.player.ui.components.songCount
 import kotlinx.coroutines.launch
-
-private val TABS = listOf("Songs", "Folders", "Albums", "Artists", "Playlists", "Queues")
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(ctx: AppContext) {
-    val pager = rememberPagerState(initialPage = 2) { TABS.size }
+    val tabSettings by ctx.vm.store.tabs.collectAsStateWithLifecycle()
+    val tabs = tabSettings.filter { it.visible }.map { it.tab }
+    // Ξεκινάμε από τα Albums, αν φαίνονται
+    val pager = rememberPagerState(initialPage = tabs.indexOf(HomeTab.ALBUMS).coerceAtLeast(0)) { tabs.size }
     val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize()) {
         TopAppBar(
@@ -80,23 +86,26 @@ fun HomeScreen(ctx: AppContext) {
                 IconButton(onClick = { ctx.nav.navigate(Routes.SETTINGS) }) { Icon(Icons.Default.Settings, "Settings") }
             },
         )
-        ScrollableTabRow(selectedTabIndex = pager.currentPage, edgePadding = 8.dp) {
-            TABS.forEachIndexed { i, t ->
-                Tab(
-                    selected = pager.currentPage == i,
-                    onClick = { scope.launch { pager.animateScrollToPage(i) } },
-                    text = { Text(t) },
-                )
+        val selected = pager.currentPage.coerceIn(0, tabs.lastIndex)
+        if (tabs.size > 1) {
+            ScrollableTabRow(selectedTabIndex = selected, edgePadding = 8.dp) {
+                tabs.forEachIndexed { i, t ->
+                    Tab(
+                        selected = selected == i,
+                        onClick = { scope.launch { pager.animateScrollToPage(i) } },
+                        text = { Text(t.label) },
+                    )
+                }
             }
         }
-        HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1) { page ->
-            when (page) {
-                0 -> SongsTab(ctx)
-                1 -> FoldersTab(ctx)
-                2 -> AlbumsTab(ctx)
-                3 -> ArtistsTab(ctx)
-                4 -> PlaylistsTab(ctx)
-                else -> QueuesTab(ctx)
+        HorizontalPager(pager, Modifier.weight(1f), beyondViewportPageCount = 1, key = { tabs[it].name }) { page ->
+            when (tabs[page]) {
+                HomeTab.SONGS -> SongsTab(ctx)
+                HomeTab.FOLDERS -> FoldersTab(ctx)
+                HomeTab.ALBUMS -> AlbumsTab(ctx)
+                HomeTab.ARTISTS -> ArtistsTab(ctx)
+                HomeTab.PLAYLISTS -> PlaylistsTab(ctx)
+                HomeTab.QUEUES -> QueuesTab(ctx)
             }
         }
     }
@@ -150,14 +159,44 @@ private fun FoldersTab(ctx: AppContext) {
 @Composable
 private fun ArtistsTab(ctx: AppContext) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
+    val view by ctx.vm.store.artistsView.collectAsStateWithLifecycle()
+    val list = when (view) {
+        ArtistsView.ARTISTS -> lib.artists
+        ArtistsView.ALBUM_ARTISTS -> lib.albumArtists
+        ArtistsView.COMPOSERS -> lib.composers
+    }
     LazyColumn(Modifier.fillMaxSize()) {
-        items(lib.artists, key = { it.key }) { a ->
+        item(key = "view") {
+            Row(
+                Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ArtistsView.entries.forEach { v ->
+                    FilterChip(
+                        selected = v == view,
+                        onClick = { ctx.vm.store.setArtistsView(v) },
+                        label = { Text(v.label) },
+                    )
+                }
+            }
+        }
+        if (list.isEmpty() && view == ArtistsView.COMPOSERS) item(key = "empty") {
+            Text(
+                "None of your songs has a composer tag.",
+                Modifier.padding(16.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        items(list, key = { it.key }) { a ->
             ListItem(
                 headlineContent = { Text(a.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 supportingContent = {
+                    val counts = if (view == ArtistsView.ALBUM_ARTISTS) "${count(a.albumCount, "album")} · ${songCount(a.songs.size)}"
+                    else songCount(a.songs.size)
                     val aka = if (a.aliases.isNotEmpty()) " · aka ${a.aliases.joinToString(", ")}" else ""
                     Text(
-                        "${songCount(a.songs.size)}$aka",
+                        "$counts$aka",
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 },

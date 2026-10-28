@@ -60,6 +60,25 @@ data class Folder(
     val name: String get() = path.trimEnd('/').substringAfterLast('/').ifEmpty { path }
 }
 
+/** Οι καρτέλες της αρχικής οθόνης. */
+enum class HomeTab(val label: String) {
+    SONGS("Songs"),
+    FOLDERS("Folders"),
+    ALBUMS("Albums"),
+    ARTISTS("Artists"),
+    PLAYLISTS("Playlists"),
+    QUEUES("Queues"),
+}
+
+data class TabSetting(val tab: HomeTab, val visible: Boolean)
+
+/** Τι δείχνει η καρτέλα Artists. */
+enum class ArtistsView(val label: String) {
+    ARTISTS("Artists"),
+    ALBUM_ARTISTS("Album-Artists"),
+    COMPOSERS("Composers"),
+}
+
 /** Πόσες φορές παίχτηκε ένα τραγούδι και πότε τελευταία (ms). */
 data class PlayStat(val count: Int, val lastPlayed: Long)
 
