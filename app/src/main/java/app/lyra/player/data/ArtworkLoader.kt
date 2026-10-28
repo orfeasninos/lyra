@@ -63,17 +63,39 @@ class ArtworkLoader(private val context: Context) {
     // ---------------------------------------------------------------
 
     private fun loadFront(song: Song, size: Int): Bitmap? {
-        embeddedPrimary(song)?.let { bytes -> decode(bytes, size)?.let { return it } }
-        val img = folderImagesOf(song.folder).firstOrNull { FRONT_NAME.containsMatchIn(it.name.lowercase()) && it.relative.isEmpty() }
-            ?: folderImagesOf(song.folder).firstOrNull { FRONT_NAME.containsMatchIn(it.name.lowercase()) }
-        return img?.let { decodeUri(it.uri, size) }
+        // 1. Ενσωματωμένες εικόνες με τον τύπο τους (MP3/FLAC). Προτιμάμε ρητά το "Front cover",
+        //    γιατί το Android επιστρέφει απλώς την πρώτη εικόνα, που μπορεί να είναι το οπισθόφυλλο.
+        val pics = readEmbedded(song)
+        val front = pics.firstOrNull { it.type == EmbeddedPictures.TYPE_FRONT }
+            ?: pics.firstOrNull { it.type != EmbeddedPictures.TYPE_BACK }
+        if (front != null) decode(front.data, size)?.let { return it }
+
+        // 2. Άλλες μορφές (M4A, OGG...) που δεν διαβάζουμε μόνοι μας. Αν όμως το αρχείο έχει
+        //    μόνο οπισθόφυλλο, δεν ρωτάμε το Android, γιατί θα μας έδινε αυτό.
+        if (pics.isEmpty()) embeddedPrimary(song)?.let { bytes -> decode(bytes, size)?.let { return it } }
+
+        // 3. Εικόνα στον φάκελο: cover/folder/front, αλλά ποτέ κάτι που μοιάζει με οπισθόφυλλο
+        val best = folderImagesOf(song.folder)
+            .filter { img ->
+                val n = img.name.lowercase().substringBeforeLast('.')
+                FRONT_NAME.containsMatchIn(n) && !BACK_NAME.containsMatchIn(n)
+            }
+            .sortedWith(
+                compareBy<FolderImage> { it.relative.length }
+                    .thenBy { if (it.name.lowercase().substringBeforeLast('.') in EXACT_FRONT) 0 else 1 }
+                    .thenBy { it.name.length }
+            )
+            .firstOrNull()
+        return best?.let { decodeUri(it.uri, size) }
     }
+
+    private fun readEmbedded(song: Song): List<EmbeddedPictures.Picture> = runCatching {
+        context.contentResolver.openInputStream(song.uri)?.use { EmbeddedPictures.read(it) }
+    }.getOrNull().orEmpty()
 
     private fun loadBack(song: Song, size: Int): Bitmap? {
         // 1. Ενσωματωμένο οπισθόφυλλο
-        val embedded = runCatching {
-            context.contentResolver.openInputStream(song.uri)?.use { EmbeddedPictures.read(it) }
-        }.getOrNull().orEmpty()
+        val embedded = readEmbedded(song)
         embedded.firstOrNull { it.type == EmbeddedPictures.TYPE_BACK }?.let { pic ->
             decode(pic.data, size)?.let { return it }
         }
@@ -159,6 +181,7 @@ class ArtworkLoader(private val context: Context) {
 
     companion object {
         private val FRONT_NAME = Regex("(^|[^a-z])(cover|folder|front|albumart[a-z_]*large|albumart)([^a-z]|$)")
+        private val EXACT_FRONT = setOf("cover", "folder", "front", "albumart")
         private val BACK_NAME = Regex("(^|[^a-z])(back|rear|inlay|tray|traycard|back ?cover|πίσω|οπισθόφυλλο)([^a-zα-ω]|$)")
 
         private fun maxCacheBytes(): Int =
