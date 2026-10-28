@@ -1,60 +1,62 @@
 # Lyra
 
-Offline music player για Android, στο πνεύμα του Musicolet, με δύο επιπλέον δυνατότητες.
+An offline music player for Android in the spirit of Musicolet, with two extra features.
 
-## Τι κάνει
+## Features
 
-**Βασικά (όπως Musicolet)**
-- Παίζει τοπικά αρχεία, χωρίς internet και χωρίς διαφημίσεις
-- Καρτέλες: Τραγούδια, Φάκελοι, Άλμπουμ, Καλλιτέχνες, Playlists, Ουρές
-- **Πολλές ουρές ταυτόχρονα**: κάθε ουρά θυμάται τραγούδι και χρόνο, και αλλάζεις ανάμεσά τους από την καρτέλα «Ουρές»
-- Παίξε επόμενο / Πρόσθεσε στην ουρά / Νέα ουρά από εδώ (παρατεταμένο πάτημα ή ⋮ σε τραγούδι)
-- Playlists με αναδιάταξη
-- Ειδοποίηση με χειριστήρια, οθόνη κλειδώματος, ακουστικά Bluetooth (Media3)
-- Παύση όταν βγαίνουν τα ακουστικά
+**The basics (like Musicolet)**
+- Plays local files, no internet and no ads
+- Tabs: Songs, Folders, Albums, Artists, Playlists, Queues
+- **Multiple queues at once**: each queue remembers its song and position, and you switch between them from the "Queues" tab
+- Play next / Add to queue / New queue from here (long press or ⋮ on a song)
+- Playlists with reordering
+- Notification controls, lock screen, Bluetooth headphones (Media3)
+- Pauses when headphones are unplugged
+- Tags in any language: locale-aware sorting, and accent-insensitive search ("beyonce" finds "Beyoncé", "αλεξιου" finds "Αλεξίου")
 
-**Extra 1: Ψευδώνυμα καλλιτεχνών (aka)**
-- Στον καλλιτέχνη πατάς ✏️ και συνδέεις άλλα ονόματα στον ίδιο καλλιτέχνη. Π.χ. «Prince» = «The Artist Formerly Known as Prince», «Kanye West» = «Ye», «Λαυρέντης» = «Lavrentis».
-- Όλα τα τραγούδια εμφανίζονται κάτω από ένα όνομα της επιλογής σου, με «Γνωστός/ή και ως: …»
-- Αυτόματες προτάσεις για ονόματα που μοιάζουν: «Beyonce» και «Beyoncé», «The Weeknd» και «Weeknd»
-- Η αναζήτηση βρίσκει τον καλλιτέχνη με οποιοδήποτε από τα ονόματά του
-- Tags με πολλούς καλλιτέχνες («A feat. B», «A; B») σπάνε σωστά, και τα διαχωριστικά ρυθμίζονται στις Ρυθμίσεις. Ένα όνομα που έχεις δηλώσει, π.χ. «Simon & Garfunkel», δεν σπάει ποτέ.
+**Extra 1: Artist aliases (aka)**
+- On an artist page, tap ✏️ and link other names to the same artist. E.g. "Prince" = "The Artist Formerly Known as Prince", "Kanye West" = "Ye", "Λαυρέντης" = "Lavrentis".
+- All songs appear under one name of your choice, with "Also known as: …"
+- Automatic suggestions for similar names: "Beyonce" and "Beyoncé", "The Weeknd" and "Weeknd"
+- Search finds the artist by any of their names
+- Tags with multiple artists ("A feat. B", "A; B") are split correctly, and the separators are configurable in Settings. A name you've added to an artist, e.g. "Simon & Garfunkel", is never split.
 
-**Extra 2: Οπισθόφυλλο**
-- Στον player και στη σελίδα άλμπουμ: **πάτα το εξώφυλλο για να γυρίσει** στο οπισθόφυλλο, με animation
-- **Κράτα το πατημένο** για πλήρη οθόνη με pinch-zoom. Χρήσιμο για να διαβάσεις tracklist και credits.
-- Πηγές οπισθόφυλλου, με αυτή τη σειρά:
-  1. Εικόνα ενσωματωμένη στο αρχείο με τύπο «Back cover» (MP3 ID3v2.2/2.3/2.4 και FLAC)
-  2. Αρχείο εικόνας στον φάκελο του άλμπουμ ή σε υποφάκελο (π.χ. `Scans/`, `Artwork/`) με όνομα που περιέχει `back`, `rear`, `inlay`, `tray`, `πίσω` ή `οπισθόφυλλο`
+**Extra 2: Back cover**
+- In the player and on the album page: **tap the cover to flip it** to the back cover, with an animation
+- **Long press** for full screen with pinch-zoom. Handy for reading tracklists and credits.
+- Back cover sources, in this order:
+  1. An image embedded in the file with type "Back cover" (MP3 ID3v2.2/2.3/2.4 and FLAC)
+  2. An image file in the album folder or a subfolder (e.g. `Scans/`, `Artwork/`) whose name contains `back`, `rear`, `inlay`, `tray`, `πίσω` or `οπισθόφυλλο`
 
 ## Build
 
-1. Άνοιξε τον φάκελο `Lyra` στο **Android Studio** (Ladybug ή νεότερο)
-2. Περίμενε το Gradle sync. Κατεβάζει μόνο του Gradle 8.11 και τις βιβλιοθήκες.
-3. Σύνδεσε το κινητό με USB debugging και πάτα ▶ Run
+1. Open the `Lyra` folder in **Android Studio** (Ladybug or newer)
+2. Wait for the Gradle sync. It downloads Gradle 8.11 and the libraries on its own.
+3. Connect your phone with USB debugging and press ▶ Run
 
-   ή για APK: **Build → Build App Bundle(s) / APK(s) → Build APK(s)**
+   or for an APK: **Build → Build App Bundle(s) / APK(s) → Build APK(s)**
 
-Απαιτεί Android 8.0+ (API 26).
+Requires Android 8.0+ (API 26). Gradle 8.11 needs JDK 17–23; it does not run on JDK 25.
 
-## Δομή
+## Structure
 
 ```
 app/src/main/java/app/lyra/player/
 ├── data/
-│   ├── MediaScanner.kt       σάρωση MediaStore
-│   ├── Library.kt            άλμπουμ/καλλιτέχνες/φάκελοι, εφαρμογή ψευδωνύμων, αναζήτηση
-│   ├── AppStore.kt           αποθήκευση (JSON): ψευδώνυμα, playlists, ουρές
-│   ├── ArtworkLoader.kt      εξώφυλλα & οπισθόφυλλα (cache)
-│   └── EmbeddedPictures.kt   parser ID3v2/FLAC για εικόνες με τύπο
+│   ├── MediaScanner.kt       MediaStore scanning
+│   ├── Library.kt            albums/artists/folders, applying aliases, search
+│   ├── AppStore.kt           storage (JSON): aliases, playlists, queues
+│   ├── ArtworkLoader.kt      front & back covers (cached)
+│   ├── EmbeddedPictures.kt   ID3v2/FLAC parser for typed pictures
+│   └── Text.kt               multilingual sorting and search keys
 ├── playback/
 │   ├── PlaybackService.kt    Media3 ExoPlayer + MediaSession
-│   └── MusicController.kt    σύνδεση UI ↔ service, πολλαπλές ουρές
+│   └── MusicController.kt    UI ↔ service bridge, multiple queues
 └── ui/                       Jetpack Compose (Material 3, dynamic colors)
 ```
 
-## Ιδέες για συνέχεια
+## Ideas for later
 - Equalizer, sleep timer, gapless/crossfade
-- Συγχρονισμένοι στίχοι (.lrc)
-- Οπισθόφυλλο και από M4A/OGG tags
-- Drag & drop αναδιάταξη στην ουρά
+- Synced lyrics (.lrc)
+- Back covers from M4A/OGG tags
+- Drag & drop reordering in the queue
