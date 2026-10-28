@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Μια απλή λύρα -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFE8C77A"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M38,34 C30,46 34,62 44,70 L64,70 C74,62 78,46 70,34" />
+    <path
+        android:strokeColor="#FFE8C77A"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M36,38 L72,38" />
+    <path
+        android:strokeColor="#FFF3E6C4"
+        android:strokeWidth="2"
+        android:pathData="M47,38 L47,70 M54,38 L54,70 M61,38 L61,70" />
+    <path
+        android:fillColor="#FFE8C77A"
+        android:pathData="M42,70 L66,70 L62,76 L46,76 Z" />
+</vector>
