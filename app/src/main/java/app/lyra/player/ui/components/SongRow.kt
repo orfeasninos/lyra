@@ -18,6 +18,8 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
@@ -48,6 +50,7 @@ import app.lyra.player.data.AppStore
 import app.lyra.player.data.ArtworkLoader
 import app.lyra.player.data.Library
 import app.lyra.player.data.Song
+import kotlinx.coroutines.flow.StateFlow
 
 fun count(n: Int, noun: String) = if (n == 1) "1 $noun" else "$n ${noun}s"
 
@@ -69,6 +72,8 @@ class SongActions(
     val addToPlaylist: (Song) -> Unit,
     val goToAlbum: (Song) -> Unit,
     val goToArtist: (Song) -> Unit,
+    val favorites: StateFlow<List<Long>>,
+    val toggleFavorite: (Song) -> Unit,
 )
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -138,6 +143,13 @@ fun SongRow(
                     text = { Text("New queue from here") },
                     leadingIcon = { Icon(Icons.Default.Queue, null) },
                     onClick = { close(); actions.newQueueFrom(song) },
+                )
+                val favorites by actions.favorites.collectAsStateWithLifecycle()
+                val isFavorite = song.id in favorites
+                DropdownMenuItem(
+                    text = { Text(if (isFavorite) "Remove from favorites" else "Add to favorites") },
+                    leadingIcon = { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null) },
+                    onClick = { close(); actions.toggleFavorite(song) },
                 )
                 DropdownMenuItem(
                     text = { Text("Add to playlist") },

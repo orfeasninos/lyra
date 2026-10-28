@@ -60,6 +60,9 @@ data class Folder(
     val name: String get() = path.trimEnd('/').substringAfterLast('/').ifEmpty { path }
 }
 
+/** Πόσες φορές παίχτηκε ένα τραγούδι και πότε τελευταία (ms). */
+data class PlayStat(val count: Int, val lastPlayed: Long)
+
 data class Playlist(
     val id: String,
     val name: String,

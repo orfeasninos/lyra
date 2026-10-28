@@ -33,6 +33,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -122,6 +125,17 @@ fun PlayerScreen(ctx: AppContext) {
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelLarge,
             )
+            val favorites by ctx.vm.store.favorites.collectAsStateWithLifecycle()
+            if (song != null) {
+                val isFavorite = song.id in favorites
+                IconButton(onClick = { ctx.vm.store.toggleFavorite(song.id) }) {
+                    Icon(
+                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        if (isFavorite) "Remove from favorites" else "Add to favorites",
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                    )
+                }
+            }
             IconButton(onClick = { showQueue = true }) { Icon(Icons.AutoMirrored.Filled.QueueMusic, "Queue") }
         }
 

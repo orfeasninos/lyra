@@ -190,6 +190,40 @@ class AppStore(context: Context) {
         write("playlists.json", arr.toString())
     }
 
+    // ---------- Αγαπημένα ----------
+
+    /** Με τη σειρά που προστέθηκαν (το πιο πρόσφατο στο τέλος). */
+    private val _favorites = MutableStateFlow(readArray("favorites.json")?.toLongList().orEmpty())
+    val favorites: StateFlow<List<Long>> = _favorites.asStateFlow()
+
+    fun toggleFavorite(songId: Long) {
+        val list = _favorites.updateAndGet { if (songId in it) it - songId else it + songId }
+        write("favorites.json", JSONArray(list).toString())
+    }
+
+    // ---------- Ιστορικό αναπαραγωγής ----------
+
+    private val _playStats = MutableStateFlow(loadPlayStats())
+    val playStats: StateFlow<Map<Long, PlayStat>> = _playStats.asStateFlow()
+
+    fun recordPlay(songId: Long) {
+        val now = System.currentTimeMillis()
+        val stats = _playStats.updateAndGet { m ->
+            m + (songId to PlayStat((m[songId]?.count ?: 0) + 1, now))
+        }
+        val o = JSONObject()
+        stats.forEach { (id, s) -> o.put(id.toString(), JSONArray().put(s.count).put(s.lastPlayed)) }
+        write("play_stats.json", o.toString())
+    }
+
+    private fun loadPlayStats(): Map<Long, PlayStat> {
+        val o = readText("play_stats.json")?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return emptyMap()
+        return o.keys().asSequence().mapNotNull { k ->
+            val a = o.optJSONArray(k) ?: return@mapNotNull null
+            k.toLongOrNull()?.let { it to PlayStat(a.optInt(0), a.optLong(1)) }
+        }.toMap()
+    }
+
     // ---------- Ουρές (όπως στο Musicolet, πολλές ουρές ταυτόχρονα) ----------
 
     private val _queues = MutableStateFlow(loadQueues())

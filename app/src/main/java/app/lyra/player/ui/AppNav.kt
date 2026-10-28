@@ -35,6 +35,8 @@ import app.lyra.player.ui.screens.PlayerScreen
 import app.lyra.player.ui.screens.PlaylistScreen
 import app.lyra.player.ui.screens.SearchScreen
 import app.lyra.player.ui.screens.SettingsScreen
+import app.lyra.player.ui.screens.SmartList
+import app.lyra.player.ui.screens.SmartListScreen
 
 object Routes {
     const val HOME = "home"
@@ -46,6 +48,7 @@ object Routes {
     fun artist(key: String, name: String) = "artist/${Uri.encode(key)}?name=${Uri.encode(name)}"
     fun folder(path: String) = "folder/${Uri.encode(path)}"
     fun playlist(id: String) = "playlist/${Uri.encode(id)}"
+    fun smartList(list: SmartList) = "smart/${list.name}"
 }
 
 /** Ό,τι χρειάζονται οι οθόνες: ViewModel, πλοήγηση και κοινές ενέργειες. */
@@ -79,6 +82,8 @@ fun LyraRoot(vm: LibraryViewModel) {
             goToArtist = { song ->
                 vm.library.value.artistsOf(song).firstOrNull()?.let { nav.navigate(Routes.artist(it.key, it.name)) }
             },
+            favorites = vm.store.favorites,
+            toggleFavorite = { vm.store.toggleFavorite(it.id) },
         )
     }
     val ctx = remember(nav) { AppContext(vm, nav, actions) { playlistTarget = it } }
@@ -105,6 +110,10 @@ fun LyraRoot(vm: LibraryViewModel) {
                 composable(Routes.SEARCH) { SearchScreen(ctx) }
                 composable(Routes.SETTINGS) { SettingsScreen(ctx) }
                 composable(Routes.ALBUM_SETTINGS) { AlbumSettingsScreen(ctx) }
+                composable("smart/{list}", listOf(navArgument("list") { type = NavType.StringType })) {
+                    val name = it.arguments?.getString("list")
+                    SmartListScreen(ctx, SmartList.entries.firstOrNull { l -> l.name == name } ?: SmartList.FAVORITES)
+                }
                 composable("album/{key}", listOf(navArgument("key") { type = NavType.StringType })) {
                     AlbumScreen(ctx, it.arguments?.getString("key").orEmpty())
                 }

@@ -52,11 +52,21 @@ class MusicController(
     private var restored = false
     private var ticker: Job? = null
 
+    // Μέτρηση ακρόασης για το ιστορικό: ένα τραγούδι μετράει ως "παιγμένο"
+    // αφού ακουστεί για PLAY_THRESHOLD_MS ή για το μισό του, αν είναι πιο σύντομο
+    private var listenedMs = 0L
+    private var playCounted = false
+
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {
+            // Και το repeat-one του ίδιου τραγουδιού είναι transition: ξαναμετράει
+            if (events.contains(Player.EVENT_MEDIA_ITEM_TRANSITION)) {
+                listenedMs = 0
+                playCounted = false
+            }
             refreshState()
             if (events.containsAny(
                     Player.EVENT_TIMELINE_CHANGED,
@@ -275,9 +285,10 @@ class MusicController(
         ticker = scope.launch {
             var n = 0
             while (isActive) {
-                delay(500)
+                delay(TICK_MS)
                 val c = controller ?: continue
                 if (c.isPlaying) {
+                    countListening(c)
                     _state.value = _state.value.copy(
                         positionMs = c.currentPosition,
                         durationMs = c.duration.takeIf { it > 0 } ?: _state.value.durationMs,
@@ -285,6 +296,16 @@ class MusicController(
                     if (++n % 20 == 0) saveActiveQueue() // κάθε ~10 δευτερόλεπτα
                 }
             }
+        }
+    }
+
+    private fun countListening(c: MediaController) {
+        if (playCounted) return
+        listenedMs += TICK_MS
+        val threshold = c.duration.takeIf { it > 0 }?.let { minOf(PLAY_THRESHOLD_MS, it / 2) } ?: PLAY_THRESHOLD_MS
+        if (listenedMs >= threshold) {
+            playCounted = true
+            c.currentMediaItem?.mediaId?.toLongOrNull()?.let(store::recordPlay)
         }
     }
 
@@ -303,6 +324,8 @@ class MusicController(
             .build()
 
     companion object {
+        private const val TICK_MS = 500L
+        private const val PLAY_THRESHOLD_MS = 30_000L
         private val ALBUM_ART: Uri = Uri.parse("content://media/external/audio/albumart")
     }
 }

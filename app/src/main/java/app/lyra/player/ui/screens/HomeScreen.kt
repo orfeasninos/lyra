@@ -182,6 +182,12 @@ private fun ArtistsTab(ctx: AppContext) {
 @Composable
 private fun PlaylistsTab(ctx: AppContext) {
     val playlists by ctx.vm.store.playlists.collectAsStateWithLifecycle()
+    val favorites by ctx.vm.store.favorites.collectAsStateWithLifecycle()
+    val stats by ctx.vm.store.playStats.collectAsStateWithLifecycle()
+    val lib by ctx.vm.library.collectAsStateWithLifecycle()
+    val smartCounts = remember(lib, favorites, stats) {
+        SmartList.entries.associateWith { it.songs(lib, favorites, stats).size }
+    }
     var creating by remember { mutableStateOf(false) }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
@@ -189,6 +195,14 @@ private fun PlaylistsTab(ctx: AppContext) {
                 headlineContent = { Text("New playlist") },
                 leadingContent = { Icon(Icons.Default.Add, null) },
                 modifier = Modifier.clickable { creating = true },
+            )
+        }
+        items(SmartList.entries, key = { "smart:" + it.name }) { list ->
+            ListItem(
+                headlineContent = { Text(list.title) },
+                supportingContent = { Text(songCount(smartCounts[list] ?: 0)) },
+                leadingContent = { Icon(list.icon, null, tint = MaterialTheme.colorScheme.primary) },
+                modifier = Modifier.clickable { ctx.nav.navigate(Routes.smartList(list)) },
             )
         }
         items(playlists, key = { it.id }) { p ->
