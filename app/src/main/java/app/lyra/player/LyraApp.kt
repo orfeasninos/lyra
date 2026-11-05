@@ -4,6 +4,7 @@ import android.app.Application
 import app.lyra.player.data.AppStore
 import app.lyra.player.data.ArtworkLoader
 import app.lyra.player.playback.MusicController
+import app.lyra.player.widget.WidgetUpdater
 
 class LyraApp : Application() {
     lateinit var store: AppStore
@@ -18,5 +19,6 @@ class LyraApp : Application() {
         store = AppStore(this)
         artwork = ArtworkLoader(this)
         music = MusicController(this, store)
+        WidgetUpdater(this, music, store, artwork).start()
     }
 }

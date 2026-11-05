@@ -11,6 +11,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import app.lyra.player.data.AppStore
 import app.lyra.player.data.Library
+import app.lyra.player.data.MediaScanner
 import app.lyra.player.data.PlayQueue
 import app.lyra.player.data.Song
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 data class PlaybackState(
@@ -52,7 +54,9 @@ class MusicController(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var controller: MediaController? = null
-    private var library: Library = Library.EMPTY
+    private var connecting: Job? = null
+    private val _library = MutableStateFlow(Library.EMPTY)
+    val library: StateFlow<Library> = _library.asStateFlow()
     private var restored = false
     private var ticker: Job? = null
 
@@ -86,8 +90,8 @@ class MusicController(
     }
 
     fun connect() {
-        if (controller != null) return
-        scope.launch {
+        if (controller != null || connecting?.isActive == true) return
+        connecting = scope.launch {
             val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
             val c = runCatching { MediaController.Builder(context, token).buildAsync().await() }.getOrNull()
                 ?: return@launch
@@ -100,8 +104,25 @@ class MusicController(
     }
 
     fun onLibraryChanged(lib: Library) {
-        library = lib
+        _library.value = lib
         restoreIfNeeded()
+    }
+
+    /**
+     * Για τα κουμπιά του widget, που μπορεί να πατηθούν με την εφαρμογή κλειστή: συνδέεται με το
+     * service και επαναφέρει την ουρά χωρίς το UI. Επιστρέφει false αν δεν υπάρχει σύνδεση.
+     */
+    suspend fun awaitReady(): Boolean {
+        connect()
+        connecting?.join()
+        if (controller == null) return false
+        if (!restored && _library.value.songs.isEmpty()) {
+            val songs = runCatching { MediaScanner.scan(context) }.getOrDefault(emptyList())
+            val lib = withContext(Dispatchers.Default) { Library(songs, store.artistGroups.value, store.separators.value) }
+            // Στο μεταξύ μπορεί να άνοιξε η εφαρμογή και να έφερε τη δική της
+            if (!restored && _library.value.songs.isEmpty()) onLibraryChanged(lib)
+        }
+        return true
     }
 
     // ------------------------- Αναπαραγωγή -------------------------
@@ -230,7 +251,7 @@ class MusicController(
 
     private fun load(q: PlayQueue, autoPlay: Boolean) {
         val c = controller ?: return
-        val items = q.songIds.mapNotNull { library.songsById[it] }.map(::toItem)
+        val items = q.songIds.mapNotNull { _library.value.songsById[it] }.map(::toItem)
         if (items.isEmpty()) {
             c.stop(); c.clearMediaItems(); return
         }
@@ -265,7 +286,7 @@ class MusicController(
 
     private fun restoreIfNeeded() {
         val c = controller ?: return
-        if (restored || library.songs.isEmpty()) return
+        if (restored || _library.value.songs.isEmpty()) return
         restored = true
         if (c.mediaItemCount > 0) return // το service παίζει ήδη
         val active = store.queues.value.firstOrNull { it.id == store.activeQueueId.value } ?: return
@@ -324,7 +345,7 @@ class MusicController(
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(song.title)
-                    .setArtist(library.artistLine(song))
+                    .setArtist(_library.value.artistLine(song))
                     .setAlbumTitle(song.album)
                     .setArtworkUri(ContentUris.withAppendedId(ALBUM_ART, song.albumId))
                     .build()
