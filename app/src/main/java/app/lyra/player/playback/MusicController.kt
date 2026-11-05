@@ -20,7 +20,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -59,6 +63,10 @@ class MusicController(
 
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
+
+    /** Για τις λίστες: το [state] αλλάζει κάθε TICK_MS όσο παίζει, ενώ αυτό μόνο όταν αλλάξει τραγούδι. */
+    val currentSongId: StateFlow<Long?> = _state.map { it.currentSongId }.distinctUntilChanged()
+        .stateIn(scope, SharingStarted.Eagerly, null)
 
     private val listener = object : Player.Listener {
         override fun onEvents(player: Player, events: Player.Events) {

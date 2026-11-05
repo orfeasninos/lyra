@@ -9,6 +9,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.LruCache
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -32,6 +33,13 @@ class ArtworkLoader(private val context: Context) {
     private val folderImages = LruCache<String, List<FolderImage>>(64)
     private val locks = Array(8) { Mutex() }
 
+    /**
+     * Λίγες φορτώσεις ταυτόχρονα: σε γρήγορο scroll όσες περιμένουν στην ουρά και ακυρωθούν
+     * δεν διαβάζουν ποτέ το αρχείο, αντί να γεμίζουν τη μνήμη και να προκαλούν GC.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val loadDispatcher = Dispatchers.IO.limitedParallelism(4)
+
     data class FolderImage(val uri: Uri, val name: String, val relative: String)
 
     fun cached(song: Song, side: Side, size: Int): Bitmap? = cache.get(key(song, side, size))
@@ -46,11 +54,13 @@ class ArtworkLoader(private val context: Context) {
 
         return locks[(k.hashCode() and 0x7fffffff) % locks.size].withLock {
             cache.get(k)?.let { return@withLock it }
-            val bmp = withContext(Dispatchers.IO) {
-                runCatching { if (side == Side.FRONT) loadFront(song, size) else loadBack(song, size) }.getOrNull()
+            withContext(loadDispatcher) {
+                val bmp = runCatching { if (side == Side.FRONT) loadFront(song, size) else loadBack(song, size) }.getOrNull()
+                // Εδώ και όχι μετά το withContext: αν το κελί έφυγε από την οθόνη στο μεταξύ,
+                // η δουλειά που έγινε δεν πάει χαμένη και το επόμενο scroll τη βρίσκει έτοιμη.
+                if (bmp != null) cache.put(k, bmp) else missing += missKey
+                bmp
             }
-            if (bmp != null) cache.put(k, bmp) else missing += missKey
-            bmp
         }
     }
 
@@ -158,8 +168,7 @@ class ArtworkLoader(private val context: Context) {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
         if (bounds.outWidth <= 0) return null
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample(bounds.outWidth, bounds.outHeight, size) }
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
+        return decodeWith(bounds, size) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size, it) }
     }
 
     private fun decodeUri(uri: Uri, size: Int): Bitmap? {
@@ -167,8 +176,27 @@ class ArtworkLoader(private val context: Context) {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
         if (bounds.outWidth <= 0) return null
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample(bounds.outWidth, bounds.outHeight, size) }
-        return cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) }
+        return decodeWith(bounds, size) { opts -> cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, opts) } }
+    }
+
+    /**
+     * Hardware bitmap: ανεβαίνει στην GPU εδώ, στο background, και όχι στο πρώτο draw μέσα στο scroll.
+     * Αν δεν γίνει (π.χ. τεράστια εικόνα), κανονικό bitmap.
+     */
+    private fun decodeWith(bounds: BitmapFactory.Options, size: Int, decode: (BitmapFactory.Options) -> Bitmap?): Bitmap? {
+        val w = bounds.outWidth
+        val h = bounds.outHeight
+        fun options(config: Bitmap.Config) = BitmapFactory.Options().apply {
+            inSampleSize = sample(w, h, size)
+            inPreferredConfig = config
+            // Τα thumbnails ακριβώς στο μέγεθος που ζητήθηκαν, ώστε να χωράνε περισσότερα στο cache
+            val side = minOf(w, h) / inSampleSize
+            if (size < LARGE_SIZE && side > size) {
+                inDensity = side
+                inTargetDensity = size
+            }
+        }
+        return decode(options(Bitmap.Config.HARDWARE)) ?: decode(options(Bitmap.Config.ARGB_8888))
     }
 
     private fun sample(w: Int, h: Int, target: Int): Int {
@@ -180,6 +208,9 @@ class ArtworkLoader(private val context: Context) {
     private fun key(song: Song, side: Side, size: Int) = "$side|${song.albumId}|${song.folder}|$size"
 
     companion object {
+        /** Από εδώ και πάνω (οθόνη αναπαραγωγής, πλήρης οθόνη) δεν μικραίνουμε πέρα από το inSampleSize. */
+        private const val LARGE_SIZE = 900
+
         private val FRONT_NAME = Regex("(^|\\P{L})(cover|folder|front|albumart[a-z_]*large|albumart)(\\P{L}|$)")
         private val EXACT_FRONT = setOf("cover", "folder", "front", "albumart")
         private val BACK_NAME = Regex("(^|\\P{L})(back|rear|inlay|tray|traycard|back ?cover|πισω|οπισθοφυλλο)(\\P{L}|$)")

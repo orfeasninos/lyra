@@ -70,8 +70,9 @@ import app.lyra.player.ui.components.formatTime
 import app.lyra.player.ui.components.songCount
 
 @Composable
-fun MiniPlayer(ctx: AppContext, song: Song, state: PlaybackState, onOpen: () -> Unit) {
+fun MiniPlayer(ctx: AppContext, song: Song, onOpen: () -> Unit) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
+    val state by ctx.vm.music.state.collectAsStateWithLifecycle()
     Surface(tonalElevation = 3.dp) {
         // Ο mini player κάθεται πάνω από τη γραμμή πλοήγησης του συστήματος
         Column(Modifier.navigationBarsPadding()) {

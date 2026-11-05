@@ -67,7 +67,7 @@ enum class SmartList(val title: String, val icon: ImageVector, val empty: String
 @Composable
 fun SmartListScreen(ctx: AppContext, list: SmartList) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     val favorites by ctx.vm.store.favorites.collectAsStateWithLifecycle()
     val stats by ctx.vm.store.playStats.collectAsStateWithLifecycle()
     val songs = remember(list, lib, favorites, stats) { list.songs(lib, favorites, stats) }
@@ -99,7 +99,7 @@ fun SmartListScreen(ctx: AppContext, list: SmartList) {
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
                     onClick = { ctx.vm.music.play(songs, i) },
-                    isCurrent = playback.currentSongId == s.id,
+                    isCurrent = currentSongId == s.id,
                 )
             }
         }

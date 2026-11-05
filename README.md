@@ -36,6 +36,8 @@ An offline music player for Android in the spirit of Musicolet, with two extra f
 
    or for an APK: **Build → Build App Bundle(s) / APK(s) → Build APK(s)**
 
+Debug builds stutter when scrolling, which is normal for Compose. To judge performance, pick the `release` variant in **Build → Select Build Variant**.
+
 Requires Android 8.0+ (API 26). Gradle 8.11 needs JDK 17–23; it does not run on JDK 25.
 
 ## Structure

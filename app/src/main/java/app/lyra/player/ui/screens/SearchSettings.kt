@@ -59,7 +59,7 @@ import app.lyra.player.ui.components.songCount
 @Composable
 fun SearchScreen(ctx: AppContext) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     var query by rememberSaveable { mutableStateOf("") }
     val result = remember(query, lib) { lib.search(query) }
     val focus = remember { FocusRequester() }
@@ -109,7 +109,7 @@ fun SearchScreen(ctx: AppContext) {
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
                     onClick = { ctx.vm.music.play(result.songs, i) },
-                    isCurrent = playback.currentSongId == s.id,
+                    isCurrent = currentSongId == s.id,
                 )
             }
         }

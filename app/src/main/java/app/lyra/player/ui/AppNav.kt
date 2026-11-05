@@ -63,7 +63,7 @@ class AppContext(
 fun LyraRoot(vm: LibraryViewModel) {
     val nav = rememberNavController()
     val library by vm.library.collectAsStateWithLifecycle()
-    val playback by vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by vm.music.currentSongId.collectAsStateWithLifecycle()
     var playlistTarget by remember { mutableStateOf<List<Song>?>(null) }
 
     val actions = remember(nav) {
@@ -90,7 +90,7 @@ fun LyraRoot(vm: LibraryViewModel) {
 
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
-    val current = playback.currentSongId?.let { library.songsById[it] }
+    val current = currentSongId?.let { library.songsById[it] }
 
     Scaffold(
         bottomBar = {
@@ -99,7 +99,7 @@ fun LyraRoot(vm: LibraryViewModel) {
                 enter = slideInVertically { it },
                 exit = slideOutVertically { it },
             ) {
-                if (current != null) MiniPlayer(ctx, current, playback) { nav.navigate(Routes.PLAYER) { launchSingleTop = true } }
+                if (current != null) MiniPlayer(ctx, current) { nav.navigate(Routes.PLAYER) { launchSingleTop = true } }
             }
         },
     ) { padding ->

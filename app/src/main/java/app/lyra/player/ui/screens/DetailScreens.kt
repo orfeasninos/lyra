@@ -101,7 +101,7 @@ private fun Missing(ctx: AppContext, what: String) {
 @Composable
 fun AlbumScreen(ctx: AppContext, key: String) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     val album = lib.album(key) ?: return Missing(ctx, "Album")
     val total = album.songs.sumOf { it.durationMs }
 
@@ -136,7 +136,7 @@ fun AlbumScreen(ctx: AppContext, key: String) {
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
                     onClick = { ctx.vm.music.play(album.songs, i) },
-                    isCurrent = playback.currentSongId == s.id,
+                    isCurrent = currentSongId == s.id,
                     leadingNumber = s.track,
                 )
             }
@@ -149,7 +149,7 @@ fun AlbumScreen(ctx: AppContext, key: String) {
 @Composable
 fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     // Όταν αλλάζουν τα ψευδώνυμα αλλάζει και το key, οπότε κρατάμε και το όνομα ως "άγκυρα"
     var anchor by remember { mutableStateOf(initialName) }
     var editing by remember { mutableStateOf(false) }
@@ -217,7 +217,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
                     onClick = { ctx.vm.music.play(artist.songs, i) },
-                    isCurrent = playback.currentSongId == s.id,
+                    isCurrent = currentSongId == s.id,
                 )
             }
         }
@@ -237,7 +237,7 @@ fun ArtistScreen(ctx: AppContext, key: String, initialName: String) {
 @Composable
 fun FolderScreen(ctx: AppContext, path: String) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     val folder = lib.folder(path) ?: return Missing(ctx, "Folder")
 
     Column(Modifier.fillMaxSize()) {
@@ -255,7 +255,7 @@ fun FolderScreen(ctx: AppContext, path: String) {
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
                     onClick = { ctx.vm.music.play(folder.songs, i) },
-                    isCurrent = playback.currentSongId == s.id,
+                    isCurrent = currentSongId == s.id,
                 )
             }
         }
@@ -267,7 +267,7 @@ fun FolderScreen(ctx: AppContext, path: String) {
 @Composable
 fun PlaylistScreen(ctx: AppContext, id: String) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     val playlists by ctx.vm.store.playlists.collectAsStateWithLifecycle()
     val playlist = playlists.firstOrNull { it.id == id } ?: return Missing(ctx, "Playlist")
     // Κρατάμε τη θέση στη λίστα, γιατί το ίδιο τραγούδι μπορεί να υπάρχει δύο φορές
@@ -304,7 +304,7 @@ fun PlaylistScreen(ctx: AppContext, id: String) {
                 SongRow(
                     s, lib, ctx.vm.artwork, ctx.songActions,
                     onClick = { ctx.vm.music.play(songs, i) },
-                    isCurrent = playback.currentSongId == s.id,
+                    isCurrent = currentSongId == s.id,
                     extraMenu = { close ->
                         if (pos > 0) DropdownMenuItem(
                             text = { Text("Move up") },

@@ -51,6 +51,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -93,6 +95,8 @@ fun AlbumsTab(ctx: AppContext) {
     }
     val extra = prefs.effectiveExtraInfo()
     val open = { al: Album -> ctx.nav.navigate(Routes.album(al.key)) }
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val density = LocalDensity.current.density
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -134,7 +138,8 @@ fun AlbumsTab(ctx: AppContext) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(albums, key = { it.key }) { al -> AlbumTile(ctx, al, extra, prefs.gridSize) { open(al) } }
+                val loadSize = gridCellPx(prefs.gridSize, screenWidthDp, density)
+                items(albums, key = { it.key }) { al -> AlbumTile(ctx, al, extra, prefs.gridSize, loadSize) { open(al) } }
             }
             else -> LazyColumn(Modifier.fillMaxSize(), state = listState) {
                 items(albums, key = { it.key }) { al ->
@@ -169,7 +174,7 @@ fun AlbumsTab(ctx: AppContext) {
 
 /** Κελί πλέγματος: εξώφυλλο με τον τίτλο από κάτω, μέσα σε πλαίσιο. */
 @Composable
-private fun AlbumTile(ctx: AppContext, al: Album, extra: AlbumExtraInfo, size: GridSize, onClick: () -> Unit) {
+private fun AlbumTile(ctx: AppContext, al: Album, extra: AlbumExtraInfo, size: GridSize, loadSize: Int, onClick: () -> Unit) {
     val small = size <= GridSize.SMALL
     val info = extraText(al, extra)
     Surface(
@@ -179,7 +184,7 @@ private fun AlbumTile(ctx: AppContext, al: Album, extra: AlbumExtraInfo, size: G
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column {
-            Artwork(ctx.vm.artwork, al.cover, loadSize = if (small) 200 else 360, corner = 0.dp, fill = true)
+            Artwork(ctx.vm.artwork, al.cover, loadSize = loadSize, corner = 0.dp, fill = true)
             Column(Modifier.padding(horizontal = 6.dp, vertical = 4.dp)) {
                 Text(
                     al.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -196,6 +201,13 @@ private fun AlbumTile(ctx: AppContext, al: Album, extra: AlbumExtraInfo, size: G
             }
         }
     }
+}
+
+/** Το πλάτος κελιού σε pixels, με τα ίδια κενά (8dp) που έχει το πλέγμα στο [AlbumsTab]. */
+private fun gridCellPx(size: GridSize, screenWidthDp: Int, density: Float): Int {
+    val available = screenWidthDp - 16
+    val columns = ((available + 8) / (size.minCellDp + 8)).coerceAtLeast(1)
+    return ((available - 8 * (columns - 1)) / columns * density).toInt()
 }
 
 private fun extraText(al: Album, info: AlbumExtraInfo): String? = when (info) {

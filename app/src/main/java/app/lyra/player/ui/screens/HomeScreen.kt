@@ -114,7 +114,7 @@ fun HomeScreen(ctx: AppContext) {
 @Composable
 private fun SongsTab(ctx: AppContext) {
     val lib by ctx.vm.library.collectAsStateWithLifecycle()
-    val playback by ctx.vm.music.state.collectAsStateWithLifecycle()
+    val currentSongId by ctx.vm.music.currentSongId.collectAsStateWithLifecycle()
     val songs = remember(lib) { lib.songs.sortedWith(byName { it.title }) }
     LazyColumn(Modifier.fillMaxSize()) {
         item {
@@ -130,7 +130,7 @@ private fun SongsTab(ctx: AppContext) {
             SongRow(
                 s, lib, ctx.vm.artwork, ctx.songActions,
                 onClick = { ctx.vm.music.play(songs, i) },
-                isCurrent = playback.currentSongId == s.id,
+                isCurrent = currentSongId == s.id,
             )
         }
     }
