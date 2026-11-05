@@ -141,6 +141,6 @@ fun LyraRoot(vm: LibraryViewModel) {
     }
 
     playlistTarget?.let { songs ->
-        AddToPlaylistDialog(vm.store, songs) { playlistTarget = null }
+        AddToPlaylistDialog(vm.store, songs.map { it.id }) { playlistTarget = null }
     }
 }

@@ -39,6 +39,25 @@
             </intent-filter>
         </service>
 
+        <activity
+            android:name=".widget.WidgetConfigActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Lyra.WidgetConfig">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".widget.WidgetAddToPlaylistActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Lyra.WidgetDialog"
+            android:windowSoftInputMode="adjustResize" />
+
         <receiver
             android:name=".widget.LyraWidget"
             android:exported="false"

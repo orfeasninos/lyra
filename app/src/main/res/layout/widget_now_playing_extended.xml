@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_background" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="6dp">
+
+        <ImageView
+            android:id="@+id/widget_art"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/widget_art_background"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_launcher_foreground" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="6dp"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="34dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/widget_playlist"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Add to playlist"
+                    android:src="@drawable/ic_widget_playlist_add" />
+
+                <ImageView
+                    android:id="@+id/widget_rewind"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Rewind"
+                    android:src="@drawable/ic_widget_rewind" />
+
+                <ImageView
+                    android:id="@+id/widget_previous"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Previous"
+                    android:src="@drawable/ic_widget_previous" />
+
+                <ImageView
+                    android:id="@+id/widget_toggle"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Play"
+                    android:src="@drawable/ic_widget_play" />
+
+                <ImageView
+                    android:id="@+id/widget_next"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Next"
+                    android:src="@drawable/ic_widget_next" />
+
+                <ImageView
+                    android:id="@+id/widget_forward"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Fast-forward"
+                    android:src="@drawable/ic_widget_forward" />
+
+                <ImageView
+                    android:id="@+id/widget_favorite"
+                    style="@style/WidgetButton.Row"
+                    android:contentDescription="Add to favorites"
+                    android:src="@drawable/ic_widget_favorite_border" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

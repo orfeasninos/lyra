@@ -182,7 +182,7 @@ fun RemoveMenuItem(label: String, close: () -> Unit, onRemove: () -> Unit) {
 }
 
 @Composable
-fun AddToPlaylistDialog(store: AppStore, songs: List<Song>, onDismiss: () -> Unit) {
+fun AddToPlaylistDialog(store: AppStore, songIds: List<Long>, onDismiss: () -> Unit) {
     val playlists by store.playlists.collectAsStateWithLifecycle()
     var creating by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
@@ -206,7 +206,7 @@ fun AddToPlaylistDialog(store: AppStore, songs: List<Song>, onDismiss: () -> Uni
                             headlineContent = { Text(p.name) },
                             supportingContent = { Text(songCount(p.songIds.size)) },
                             modifier = Modifier.clickable {
-                                store.addToPlaylist(p.id, songs.map { it.id }); onDismiss()
+                                store.addToPlaylist(p.id, songIds); onDismiss()
                             },
                         )
                     }
@@ -216,7 +216,7 @@ fun AddToPlaylistDialog(store: AppStore, songs: List<Song>, onDismiss: () -> Uni
         confirmButton = {
             if (creating) TextButton(
                 enabled = name.isNotBlank(),
-                onClick = { store.createPlaylist(name, songs.map { it.id }); onDismiss() },
+                onClick = { store.createPlaylist(name, songIds); onDismiss() },
             ) { Text("Create") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },

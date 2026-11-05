@@ -11,6 +11,20 @@
         <item name="android:padding">8dp</item>
         <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
     </style>
+    <style name="WidgetButton.Row">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:padding">5dp</item>
+    </style>
+    <style name="Theme.Lyra.WidgetConfig">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowShowWallpaper">true</item>
+    </style>
+    <style name="Theme.Lyra.WidgetDialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
     <color name="bg">#FF121214</color>
     <color name="launcher_bg">#FF1E1B2E</color>
 </resources>

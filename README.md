@@ -12,6 +12,7 @@ An offline music player for Android in the spirit of Musicolet, with two extra f
 - Playlists with reordering
 - Notification controls, lock screen, Bluetooth headphones (Media3)
 - Home screen widget with cover, title and previous / play / next. The buttons work even when the app is closed.
+- Each widget has its own settings: light, dark, system or album-art theme, transparency, and optional favorite, add-to-playlist and seek buttons. Long press the widget and choose its settings to change them later.
 - Pauses when headphones are unplugged
 - Tags in any language: locale-aware sorting, and accent-insensitive search ("beyonce" finds "Beyoncé", "αλεξιου" finds "Αλεξίου")
 
@@ -57,7 +58,9 @@ app/src/main/java/app/lyra/player/
 │   └── MusicController.kt    UI ↔ service bridge, multiple queues
 ├── widget/
 │   ├── LyraWidget.kt         home screen widget, button handling
-│   └── WidgetUpdater.kt      keeps the widget in sync with playback
+│   ├── WidgetUpdater.kt      draws the widget, keeps it in sync with playback
+│   ├── WidgetStyle.kt        per-widget settings
+│   └── WidgetActivities.kt   settings screen, add-to-playlist dialog
 └── ui/                       Jetpack Compose (Material 3, dynamic colors)
 ```
 

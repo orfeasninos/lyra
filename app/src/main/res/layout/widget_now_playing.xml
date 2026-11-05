@@ -1,70 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/widget_background"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:padding="6dp">
+    android:layout_height="match_parent">
 
     <ImageView
-        android:id="@+id/widget_art"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:background="@drawable/widget_art_background"
+        android:id="@+id/widget_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:importantForAccessibility="no"
-        android:scaleType="centerCrop"
-        android:src="@drawable/ic_launcher_foreground" />
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_background" />
 
     <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="4dp"
-        android:layout_weight="1"
-        android:orientation="vertical">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="6dp">
 
-        <TextView
-            android:id="@+id/widget_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:singleLine="true"
-            android:text="Lyra"
-            android:textColor="#FFF3E6C4"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+        <ImageView
+            android:id="@+id/widget_art"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/widget_art_background"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_launcher_foreground" />
 
-        <TextView
-            android:id="@+id/widget_artist"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:singleLine="true"
-            android:text="Tap to open"
-            android:textColor="#FFB9B2A0"
-            android:textSize="12sp" />
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="Lyra"
+                android:textColor="#FFF3E6C4"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:text="Tap to open"
+                android:textColor="#FFB9B2A0"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/widget_previous"
+            style="@style/WidgetButton"
+            android:contentDescription="Previous"
+            android:src="@drawable/ic_widget_previous"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/widget_toggle"
+            style="@style/WidgetButton"
+            android:contentDescription="Play"
+            android:src="@drawable/ic_widget_play"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/widget_next"
+            style="@style/WidgetButton"
+            android:contentDescription="Next"
+            android:src="@drawable/ic_widget_next"
+            android:visibility="gone" />
     </LinearLayout>
-
-    <ImageView
-        android:id="@+id/widget_previous"
-        style="@style/WidgetButton"
-        android:contentDescription="Previous"
-        android:src="@drawable/ic_widget_previous"
-        android:visibility="gone" />
-
-    <ImageView
-        android:id="@+id/widget_toggle"
-        style="@style/WidgetButton"
-        android:contentDescription="Play"
-        android:src="@drawable/ic_widget_play"
-        android:visibility="gone" />
-
-    <ImageView
-        android:id="@+id/widget_next"
-        style="@style/WidgetButton"
-        android:contentDescription="Next"
-        android:src="@drawable/ic_widget_next"
-        android:visibility="gone" />
-</LinearLayout>
+</FrameLayout>

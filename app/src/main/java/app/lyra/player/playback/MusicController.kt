@@ -180,6 +180,12 @@ class MusicController(
         controller?.seekTo(ms)
     }
 
+    fun seekBy(deltaMs: Long) {
+        val c = controller ?: return
+        val end = c.duration.takeIf { it > 0 } ?: Long.MAX_VALUE
+        c.seekTo((c.currentPosition + deltaMs).coerceIn(0, end))
+    }
+
     fun skipTo(index: Int) {
         val c = controller ?: return
         if (index in 0 until c.mediaItemCount) {

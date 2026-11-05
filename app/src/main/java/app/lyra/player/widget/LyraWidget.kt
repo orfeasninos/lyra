@@ -21,16 +21,24 @@ import kotlinx.coroutines.withTimeoutOrNull
 class LyraWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
-        val app = context.applicationContext as LyraApp
-        WidgetUpdater.render(context, app.music.state.value.isPlaying)
+        ids.forEach { WidgetUpdater.render(context, it) }
+    }
+
+    override fun onDeleted(context: Context, ids: IntArray) {
+        ids.forEach { WidgetStyle.delete(context, it) }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         val action = intent.action
-        if (action != ACTION_TOGGLE && action != ACTION_NEXT && action != ACTION_PREVIOUS) return
+        val app = context.applicationContext as LyraApp
+        if (action == ACTION_FAVORITE) {
+            WidgetUpdater.currentSongId(context)?.let(app.store::toggleFavorite)
+            return
+        }
+        if (action !in PLAYER_ACTIONS) return
 
-        val music = (context.applicationContext as LyraApp).music
+        val music = app.music
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate).launch {
             try {
@@ -38,6 +46,8 @@ class LyraWidget : AppWidgetProvider() {
                 when (action) {
                     ACTION_NEXT -> music.next()
                     ACTION_PREVIOUS -> music.previous()
+                    ACTION_REWIND -> music.seekBy(-SEEK_MS)
+                    ACTION_FORWARD -> music.seekBy(SEEK_MS)
                     ACTION_TOGGLE -> {
                         val starting = !music.state.value.isPlaying
                         music.togglePlay()
@@ -59,7 +69,12 @@ class LyraWidget : AppWidgetProvider() {
         const val ACTION_TOGGLE = "app.lyra.player.widget.TOGGLE"
         const val ACTION_NEXT = "app.lyra.player.widget.NEXT"
         const val ACTION_PREVIOUS = "app.lyra.player.widget.PREVIOUS"
+        const val ACTION_REWIND = "app.lyra.player.widget.REWIND"
+        const val ACTION_FORWARD = "app.lyra.player.widget.FORWARD"
+        const val ACTION_FAVORITE = "app.lyra.player.widget.FAVORITE"
+        private val PLAYER_ACTIONS = setOf(ACTION_TOGGLE, ACTION_NEXT, ACTION_PREVIOUS, ACTION_REWIND, ACTION_FORWARD)
 
+        private const val SEEK_MS = 10_000L
         private const val READY_TIMEOUT_MS = 6_000L
         private const val START_TIMEOUT_MS = 2_000L
         private const val NOTIFICATION_GRACE_MS = 500L
